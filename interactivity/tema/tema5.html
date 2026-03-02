@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тема 75 — Интеграция Firebase Firestore</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #0a0e1a;
+    --surface: #111827;
+    --card:    #1a2236;
+    --border:  #2a3a55;
+    --accent:  #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --danger:  #ef4444;
+    --warn:    #f59e0b;
+    --text:    #e2e8f0;
+    --muted:   #64748b;
+    --code-bg: #0d1117;
+    --grid-color: rgba(0,212,255,0.03);
+    --hover-bg:   rgba(0,212,255,0.05);
+    --text-body:  #94a3b8;
+    --shadow:     rgba(0,0,0,0.25);
+  }
+  body.light {
+    --bg:      #f0f4ff;
+    --surface: #ffffff;
+    --card:    #f8faff;
+    --border:  #dde3f5;
+    --accent:  #4f6ef7;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --danger:  #ef4444;
+    --warn:    #f59e0b;
+    --text:    #1a2236;
+    --muted:   #6b7a99;
+    --code-bg: #eef1fb;
+    --grid-color: rgba(79,110,247,0.05);
+    --hover-bg:   rgba(79,110,247,0.05);
+    --text-body:  #3a4a6b;
+    --shadow:     rgba(79,110,247,0.08);
+  }
+  body.light::before {
+    background-image:
+      linear-gradient(var(--grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  }
+  body.light section p, body.light ul li { color: var(--text-body); }
+  body.light input[type="text"] { background: #ffffff; color: var(--text); }
+  body.light input[type="text"]:focus { box-shadow: 0 0 0 3px rgba(79,110,247,0.12); }
+  body.light nav a:hover { background: var(--hover-bg); }
+  body.light button:hover { background: rgba(79,110,247,0.08); box-shadow: 0 4px 16px rgba(79,110,247,0.2); }
+  body.light section { box-shadow: 0 4px 24px var(--shadow); }
+
+  .theme-toggle {
+    position: fixed; bottom: 28px; right: 28px; z-index: 999;
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 2px solid var(--accent); background: var(--card); color: var(--accent);
+    font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    padding: 0; margin: 0; letter-spacing: 0; line-height: 1;
+  }
+  .theme-toggle:hover {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.3), 0 0 16px rgba(0,212,255,0.3);
+    background: var(--card);
+  }
+  body.light .theme-toggle:hover { box-shadow: 0 8px 28px rgba(79,110,247,0.2), 0 0 16px rgba(79,110,247,0.2); }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh; overflow-x: hidden; line-height: 1.7;
+    transition: background 0.35s ease, color 0.35s ease;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+    transition: background-image 0.35s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  header {
+    position: relative; z-index: 1;
+    padding: 52px 32px 38px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, var(--hover-bg) 0%, transparent 100%);
+    text-align: center;
+    transition: background 0.35s ease, border-color 0.35s ease;
+  }
+  header::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  header h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(22px, 4vw, 38px); font-weight: 900; line-height: 1.2;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 12px;
+  }
+  header h2 { font-size: clamp(13px, 2vw, 17px); font-weight: 400; color: var(--muted); margin-bottom: 14px; }
+  header p  { font-size: 12px; color: var(--muted); margin: 4px 0; letter-spacing: 0.5px; opacity: 0.85; }
+
+  .topic-badge {
+    display: inline-block; background: var(--accent2); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; padding: 4px 12px;
+    border-radius: 2px; margin-bottom: 16px;
+  }
+  .progress-wrap  { display: flex; align-items: center; gap: 16px; justify-content: center; margin-top: 22px; flex-wrap: wrap; }
+  .progress-bar   { width: 320px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill  { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width 0.5s ease; border-radius: 3px; }
+  .progress-label { font-size: 12px; color: var(--muted); }
+  .score-badge {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 6px 18px; font-size: 12px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center;
+  }
+  .score-badge b { color: var(--accent); font-size: 15px; }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; justify-content: center;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+    transition: background 0.35s ease, border-color 0.35s ease;
+  }
+  nav a {
+    color: var(--muted); text-decoration: none; padding: 14px 22px;
+    font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px;
+    border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; letter-spacing: 0.5px;
+  }
+  nav a:hover { color: var(--accent); border-bottom-color: var(--accent); background: var(--hover-bg); }
+  .nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent3); opacity: 0; transition: opacity 0.3s; flex-shrink: 0; }
+  nav a.done .nav-dot { opacity: 1; }
+
+  section {
+    position: relative; z-index: 1;
+    background: var(--card); border: 1px solid var(--border);
+    margin: 24px auto; padding: 40px 44px; max-width: 920px; border-radius: 12px;
+    animation: slideUp 0.4s ease both; box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+    transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  }
+  section h2 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(16px, 2.5vw, 22px); font-weight: 700;
+    color: var(--accent); margin-bottom: 24px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;
+    transition: color 0.35s ease;
+  }
+  section h2::before {
+    content: ''; display: inline-block; width: 3px; height: 24px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2)); border-radius: 2px; flex-shrink: 0;
+  }
+  section h3 {
+    color: var(--accent); font-size: 13px; font-weight: 700;
+    margin-top: 28px; margin-bottom: 12px;
+    padding-left: 14px; border-left: 3px solid var(--warn);
+    letter-spacing: 0.3px; opacity: 0.9; transition: color 0.35s ease;
+  }
+  section p { margin-bottom: 14px; font-size: 13px; line-height: 1.9; color: var(--text-body); text-align: justify; transition: color 0.35s ease; }
+
+  ul { margin: 14px 0 14px 8px; list-style: none; }
+  ul li { margin-bottom: 10px; font-size: 13px; line-height: 1.7; color: var(--text-body); padding-left: 20px; position: relative; transition: color 0.35s ease; }
+  ul li::before { content: "▸"; color: var(--accent); font-weight: bold; position: absolute; left: 0; }
+
+  /* ТЕОРИЯ */
+  .theory-box {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 20px 24px; margin-bottom: 24px;
+    font-size: 13px; line-height: 1.85; color: var(--text-body);
+    transition: background 0.35s ease;
+  }
+  .theory-label { display: block; font-size: 10px; letter-spacing: 2px; color: var(--accent); font-weight: 700; margin-bottom: 12px; }
+  .theory-box strong { color: var(--accent); }
+  .theory-box code {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 3px;
+    padding: 1px 6px; font-size: 12px; color: var(--warn);
+  }
+
+  /* КОД */
+  .code-fill {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 20px; font-size: 12px; line-height: 2.3; overflow-x: auto; margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .code-fill .kw   { color: #ff79c6; }
+  .code-fill .str  { color: #f1fa8c; }
+  .code-fill .cmt  { color: #4a6080; font-style: italic; }
+  .code-fill .prop { color: var(--accent); }
+  .code-fill .val  { color: var(--accent3); }
+  .code-fill .num  { color: #bd93f9; }
+
+  .fill-blank {
+    display: inline-block; border: none; border-bottom: 2px solid var(--accent);
+    background: transparent; color: var(--warn);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    padding: 0 4px 2px; outline: none; text-align: center; transition: border-color 0.2s;
+  }
+  .fill-blank:focus   { border-bottom-color: var(--accent2); }
+  .fill-blank.correct { border-bottom-color: var(--accent3); color: var(--accent3); }
+  .fill-blank.wrong   { border-bottom-color: var(--danger);  color: var(--danger); }
+
+  .hint-strip {
+    background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 6px; padding: 10px 16px; font-size: 12px; color: var(--warn); margin-bottom: 16px;
+  }
+
+  /* КВИЗ */
+  .q-block { margin-bottom: 28px; }
+  .q-num   { font-size: 10px; letter-spacing: 2px; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  .q-text  { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text); line-height: 1.6; }
+  .quiz-options { display: flex; flex-direction: column; gap: 9px; }
+  .quiz-opt {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 13px 18px; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text);
+    text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 12px; margin: 0;
+  }
+  .quiz-opt:hover:not(:disabled) { border-color: var(--accent); background: var(--hover-bg); }
+  .quiz-opt:disabled { cursor: default; transform: none; box-shadow: none; }
+  .quiz-opt.correct { border-color: var(--accent3); background: rgba(16,185,129,0.1); color: var(--accent3); }
+  .quiz-opt.wrong   { border-color: var(--danger);  background: rgba(239,68,68,0.1);  color: var(--danger); }
+  .opt-label {
+    width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+
+  /* СОРТИРОВКА */
+  .sort-list { display: flex; flex-direction: column; gap: 9px; margin: 16px 0; }
+  .sort-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 13px 18px; cursor: grab; display: flex; align-items: center; gap: 14px;
+    font-size: 13px; user-select: none; transition: all 0.2s;
+  }
+  .sort-item:hover { border-color: var(--accent); }
+  .sort-item.dragging { opacity: 0.4; }
+  .sort-handle { color: var(--muted); font-size: 18px; flex-shrink: 0; }
+  .sort-num {
+    width: 26px; height: 26px; background: var(--border); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .sort-item.correct-pos { border-color: var(--accent3); background: rgba(16,185,129,0.07); }
+  .sort-item.correct-pos .sort-num { background: var(--accent3); color: #0a0e1a; }
+  .sort-item.wrong-pos   { border-color: var(--danger); }
+  .sort-item.wrong-pos .sort-num   { background: var(--danger); color: #fff; }
+  .sort-tag { color: var(--accent); font-weight: 700; }
+
+  /* СОПОСТАВЛЕНИЕ */
+  .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .match-col  { display: flex; flex-direction: column; gap: 9px; }
+  .match-col-title { font-size: 10px; letter-spacing: 2px; color: var(--muted); font-weight: 700; padding-left: 4px; margin-bottom: 4px; }
+  .match-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 13px 16px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+    min-height: 52px; display: flex; align-items: center; line-height: 1.5;
+  }
+  .match-item:hover:not(.matched) { border-color: var(--accent); background: var(--hover-bg); }
+  .match-item.selected    { border-color: var(--accent); background: rgba(0,212,255,0.08); }
+  .match-item.matched     { border-color: var(--accent3); background: rgba(16,185,129,0.08); cursor: default; color: #6ee7b7; }
+  .match-item.wrong-match { border-color: var(--danger);  background: rgba(239,68,68,0.08); }
+
+  /* МУЛЬТИВЫБОР */
+  .chips { display: flex; flex-wrap: wrap; gap: 9px; margin: 14px 0; }
+  .chip {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 8px 18px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip.selected       { background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent); }
+  .chip.correct        { border-color: var(--accent3); background: rgba(16,185,129,0.1); color: var(--accent3); }
+  .chip.missed         { border-color: rgba(16,185,129,0.4); color: var(--accent3); }
+  .chip.wrong-selected { border-color: var(--danger); background: rgba(239,68,68,0.1); color: var(--danger); }
+
+  /* КНОПКИ */
+  button {
+    background: transparent; border: 1px solid var(--accent); color: var(--accent);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+    padding: 11px 26px; border-radius: 6px; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.5px; margin: 12px 0;
+  }
+  button:hover { background: var(--hover-bg); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,212,255,0.2); }
+  button:active { transform: translateY(0); }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+
+  /* РЕЗУЛЬТАТ */
+  .result-box {
+    margin-top: 14px; padding: 14px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; min-height: 20px;
+    transition: all 0.3s ease; display: none;
+  }
+  .result-box.show    { display: block; animation: fadeIn 0.3s ease; }
+  .result-box.success { background: rgba(16,185,129,0.1); border: 1px solid var(--accent3); color: var(--accent3); }
+  .result-box.error   { background: rgba(239,68,68,0.1);  border: 1px solid var(--danger);  color: var(--danger); }
+  .result-box.info    { background: rgba(0,212,255,0.08); border: 1px solid var(--accent);  color: var(--accent); }
+
+  footer {
+    position: relative; z-index: 1; background: var(--surface); border-top: 1px solid var(--border);
+    color: var(--muted); text-align: center; padding: 28px; margin-top: 40px;
+    font-size: 12px; letter-spacing: 0.5px; transition: background 0.35s ease;
+  }
+  footer::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  footer p { margin: 0; }
+
+  @media (max-width: 768px) {
+    header  { padding: 32px 20px; }
+    section { padding: 24px 20px; margin: 14px 10px; }
+    nav { flex-direction: column; }
+    nav a { text-align: center; border-bottom: 1px solid var(--border); }
+    .match-grid { grid-template-columns: 1fr; }
+    .theme-toggle { bottom: 18px; right: 18px; width: 46px; height: 46px; font-size: 19px; }
+  }
+  @media (max-width: 480px) {
+    section { padding: 18px 14px; margin: 10px 6px; }
+    button  { padding: 10px 18px; }
+  }
+</style>
+</head>
+<body>
+  <button class="theme-toggle" id="themeBtn"
+  onclick="document.body.classList.toggle('light');
+           this.textContent=document.body.classList.contains('light')?'🌙':'☀️'">
+  ☀️
+</button>
+
+<button class="theme-toggle" id="themeBtn"
+  onclick="document.body.classList.toggle('light');document.getElementById('themeBtn').textContent=document.body.classList.contains('light')?'🌙':'☀️'"
+  title="Сменить тему">☀️</button>
+
+<header>
+  <div class="topic-badge">ТЕМА 75</div>
+  <h1>Интеграция облачных баз данных<br>Firebase Firestore</h1>
+  <h2>5 интерактивных заданий — теория + проверка знаний</h2>
+  <p>Изучай теорию в каждом задании, затем проверяй себя</p>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+    <div class="progress-label" id="progText">0 / 5 заданий</div>
+    <div class="score-badge">Очки: <b id="scoreEl">0</b></div>
+  </div>
+</header>
+
+<nav>
+  <a href="#t1" id="nav1">01 Квиз<span class="nav-dot"></span></a>
+  <a href="#t2" id="nav2">02 Сортировка<span class="nav-dot"></span></a>
+  <a href="#t3" id="nav3">03 Вставь код<span class="nav-dot"></span></a>
+  <a href="#t4" id="nav4">04 Сопоставление<span class="nav-dot"></span></a>
+  <a href="#t5" id="nav5">05 Мультивыбор<span class="nav-dot"></span></a>
+  <a href="#t6" id="nav6">06 Блок - Схема<span class="nav-dot"></span></a>
+</nav>
+
+<!-- ===== 01 КВИЗ ===== -->
+<section id="t1">
+  <h2>01 — Квиз: принципы работы Firestore</h2>
+
+  <div class="theory-box">
+    <span class="theory-label">📚 ТЕОРИЯ</span>
+    <strong>Cloud Firestore</strong> — облачная документно-ориентированная база данных от Google, разработанная для масштабируемых мобильных и веб-приложений.<br><br>
+    <strong>Ключевые возможности Firestore:</strong>
+    <ul style="margin-top:8px">
+      <li><strong>Реальное время</strong> — слушатели (<code>addSnapshotListener</code>) получают обновления мгновенно при изменении данных</li>
+      <li><strong>Офлайн-поддержка</strong> — SDK кэширует данные локально, приложение работает без сети</li>
+      <li><strong>Масштабируемость</strong> — автоматически масштабируется под любую нагрузку</li>
+      <li><strong>Безопасность</strong> — Firebase Security Rules контролируют доступ на уровне документа</li>
+    </ul>
+    <br>
+    <strong>Типы запросов Firestore:</strong><br>
+    • <code>get()</code> — одноразовое чтение документа или коллекции<br>
+    • <code>addSnapshotListener()</code> — подписка на изменения в реальном времени<br>
+    • <code>whereEqualTo()</code>, <code>whereLessThan()</code>, <code>orderBy()</code>, <code>limit()</code> — фильтрация и сортировка
+  </div>
+
+  <div id="q1wrap"></div>
+  <div class="result-box" id="r1"></div>
+  <div class="btn-row">
+    <button onclick="checkQ1()">Проверить ответы</button>
+    <button onclick="resetQ1()">Сбросить</button>
+  </div>
+</section>
+
+<!-- ===== 02 СОРТИРОВКА ===== -->
+<section id="t2">
+  <h2>02 — Сортировка: операции записи в Firestore</h2>
+
+  <div class="theory-box">
+    <span class="theory-label">📚 ТЕОРИЯ</span>
+    <strong>Операции записи в Firestore и их поведение:</strong><br><br>
+    <strong>set()</strong> — полностью перезаписывает документ. Если документа нет — создаёт. Все поля, не указанные в вызове, <strong>удаляются</strong>.<br><br>
+    <strong>set() + merge:true</strong> — как <code>set()</code>, но существующие поля, которые не указаны, <strong>сохраняются</strong> (слияние).<br><br>
+    <strong>update()</strong> — обновляет только указанные поля. Документ должен <strong>существовать</strong> заранее, иначе ошибка.<br><br>
+    <strong>add()</strong> — создаёт новый документ с <strong>автогенерированным</strong> ID в коллекции.<br><br>
+    <strong>delete()</strong> — удаляет весь документ целиком.<br><br>
+    <strong>FieldValue.delete()</strong> — удаляет конкретное <strong>поле</strong> внутри документа при вызове <code>update()</code>.
+  </div>
+
+  <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Расставь операции от «создания» к «удалению» в логическом порядке их применения в жизненном цикле документа:</p>
+
+  <div class="sort-list" id="sl2">
+    <div class="sort-item" draggable="true" data-v="s3">
+      <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+      <div><span class="sort-tag">update()</span> — обновить отдельные поля существующего документа</div>
+    </div>
+    <div class="sort-item" draggable="true" data-v="s1">
+      <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+      <div><span class="sort-tag">add()</span> — создать документ с автогенерированным ID</div>
+    </div>
+    <div class="sort-item" draggable="true" data-v="s5">
+      <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+      <div><span class="sort-tag">delete()</span> — удалить документ полностью</div>
+    </div>
+    <div class="sort-item" draggable="true" data-v="s4">
+      <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+      <div><span class="sort-tag">FieldValue.delete()</span> — удалить конкретное поле документа</div>
+    </div>
+    <div class="sort-item" draggable="true" data-v="s2">
+      <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+      <div><span class="sort-tag">set()</span> — записать или полностью перезаписать документ</div>
+    </div>
+  </div>
+
+  <div class="result-box" id="r2"></div>
+  <div class="btn-row">
+    <button onclick="checkSort2()">Проверить порядок</button>
+    <button onclick="resetSort2()">Сбросить</button>
+  </div>
+</section>
+
+<!-- ===== 03 ВСТАВЬ КОД ===== -->
+<section id="t3">
+  <h2>03 — Вставь код: чтение и запись в Firestore</h2>
+
+  <div class="theory-box">
+    <span class="theory-label">📚 ТЕОРИЯ</span>
+    <strong>Основные операции с Firestore на Kotlin/Android:</strong><br><br>
+    • Получить экземпляр: <code>FirebaseFirestore.getInstance()</code><br>
+    • Путь к документу: <code>db.collection("name").document("id")</code><br>
+    • Записать данные: <code>documentRef.set(data)</code> — принимает <code>Map</code> или data-класс<br>
+    • Прочитать однократно: <code>documentRef.get()</code> — возвращает <code>Task&lt;DocumentSnapshot&gt;</code><br>
+    • Слушать изменения: <code>documentRef.addSnapshotListener { snapshot, e → ... }</code><br>
+    • Получить поле из снимка: <code>snapshot.getString("fieldName")</code><br>
+    • Фильтрация: <code>collection.whereEqualTo("field", value).get()</code><br>
+    • Добавить документ (авто-ID): <code>collection.add(data)</code>
+  </div>
+
+  <div class="hint-strip">💡 Слова для вставки: <strong>collection, document, set, addSnapshotListener, whereEqualTo</strong></div>
+
+  <div class="code-fill">
+    <div><span class="cmt">// Получение экземпляра Firestore</span></div>
+    <div><span class="kw">val</span> db = FirebaseFirestore.getInstance()</div>
+    <br>
+    <div><span class="cmt">// Ссылка на документ</span></div>
+    <div><span class="kw">val</span> docRef = db.<input class="fill-blank" id="b1" placeholder="???" style="width:100px">(<span class="str">"users"</span>)
+      .<input class="fill-blank" id="b2" placeholder="???" style="width:90px">(<span class="str">"uid_001"</span>)</div>
+    <br>
+    <div><span class="cmt">// Запись данных</span></div>
+    <div><span class="kw">val</span> data = mapOf(<span class="str">"name"</span> <span class="kw">to</span> <span class="str">"Alice"</span>, <span class="str">"age"</span> <span class="kw">to</span> <span class="num">25</span>)</div>
+    <div>docRef.<input class="fill-blank" id="b3" placeholder="???" style="width:55px">(data)</div>
+    <br>
+    <div><span class="cmt">// Подписка на изменения в реальном времени</span></div>
+    <div>docRef.<input class="fill-blank" id="b4" placeholder="???" style="width:195px"> { snapshot, e <span class="kw">-></span></div>
+    <div>&nbsp;&nbsp;<span class="kw">val</span> name = snapshot?.getString(<span class="str">"name"</span>)</div>
+    <div>}</div>
+    <br>
+    <div><span class="cmt">// Запрос с фильтром</span></div>
+    <div>db.collection(<span class="str">"users"</span>)
+      .<input class="fill-blank" id="b5" placeholder="???" style="width:135px">(<span class="str">"age"</span>, <span class="num">25</span>).get()</div>
+  </div>
+
+  <div class="result-box" id="r3"></div>
+  <div class="btn-row">
+    <button onclick="checkFill3()">Проверить</button>
+    <button onclick="resetFill3()">Сбросить</button>
+  </div>
+</section>
+
+<!-- ===== 04 СОПОСТАВЛЕНИЕ ===== -->
+<section id="t4">
+  <h2>04 — Сопоставь метод Firestore с его назначением</h2>
+
+  <div class="theory-box">
+    <span class="theory-label">📚 ТЕОРИЯ</span>
+    <strong>Методы Firestore и их точное назначение:</strong>
+    <ul style="margin-top:8px">
+      <li><code>set(data)</code> — полная перезапись документа переданными данными</li>
+      <li><code>update(data)</code> — обновление только указанных полей, остальные не трогаются</li>
+      <li><code>add(data)</code> — создание документа с автоматически сгенерированным ID</li>
+      <li><code>get()</code> — одноразовое чтение документа или результатов запроса</li>
+      <li><code>addSnapshotListener()</code> — подписка: callback вызывается при каждом изменении</li>
+      <li><code>orderBy(field)</code> — сортировка результатов запроса по указанному полю</li>
+    </ul>
+  </div>
+
+  <div class="match-grid">
+    <div class="match-col">
+      <div class="match-col-title">МЕТОД</div>
+      <div class="match-item" onclick="mClick(this,'set')"      data-k="set">set(data)</div>
+      <div class="match-item" onclick="mClick(this,'update')"   data-k="update">update(data)</div>
+      <div class="match-item" onclick="mClick(this,'add')"      data-k="add">add(data)</div>
+      <div class="match-item" onclick="mClick(this,'get')"      data-k="get">get()</div>
+      <div class="match-item" onclick="mClick(this,'snap')"     data-k="snap">addSnapshotListener()</div>
+      <div class="match-item" onclick="mClick(this,'orderby')"  data-k="orderby">orderBy(field)</div>
+    </div>
+    <div class="match-col">
+      <div class="match-col-title">НАЗНАЧЕНИЕ</div>
+      <div class="match-item" onclick="mClick(this,'get')"      data-k="get">Одноразовое чтение данных без подписки</div>
+      <div class="match-item" onclick="mClick(this,'add')"      data-k="add">Создание документа с автогенерированным ID</div>
+      <div class="match-item" onclick="mClick(this,'snap')"     data-k="snap">Подписка: callback при каждом изменении документа</div>
+      <div class="match-item" onclick="mClick(this,'set')"      data-k="set">Полная перезапись документа новыми данными</div>
+      <div class="match-item" onclick="mClick(this,'orderby')"  data-k="orderby">Сортировка результатов запроса по полю</div>
+      <div class="match-item" onclick="mClick(this,'update')"   data-k="update">Обновление только указанных полей документа</div>
+    </div>
+  </div>
+
+  <div class="result-box" id="r4"></div>
+</section>
+
+<!-- ===== 05 МУЛЬТИВЫБОР ===== -->
+<section id="t5">
+  <h2>05 — Мультивыбор: Firestore на практике</h2>
+
+  <div class="theory-box">
+    <span class="theory-label">📚 ТЕОРИЯ</span>
+    <strong>Правила безопасности и лучшие практики Firestore:</strong><br><br>
+    ✅ <strong>Security Rules</strong> — правила пишутся на языке CEL и применяются на сервере без кода бэкенда<br>
+    ✅ <strong>Транзакции</strong> (<code>runTransaction</code>) — атомарное чтение и запись нескольких документов<br>
+    ✅ <strong>Batch write</strong> (<code>WriteBatch</code>) — запись до 500 операций одним атомарным вызовом<br>
+    ✅ <strong>Составные индексы</strong> нужны для запросов с несколькими условиями фильтрации/сортировки<br>
+    ✅ <strong>Пагинация</strong> реализуется через <code>startAfter(lastDoc)</code> + <code>limit(n)</code><br>
+    ✅ Firestore <strong>тарифицируется</strong> по количеству операций чтения, записи и удаления<br>
+    ❌ Firestore <strong>НЕ поддерживает</strong> полнотекстовый поиск — нужен Algolia или Typesense<br>
+    ❌ <strong>addSnapshotListener</strong> нужно отписывать (<code>remove()</code>) при уничтожении компонента, иначе утечка памяти<br>
+    ❌ <code>update()</code> завершится ошибкой, если документа <strong>не существует</strong>
+  </div>
+
+  <div id="mwrap"></div>
+  <div class="result-box" id="r5"></div>
+  <div class="btn-row">
+    <button onclick="checkMulti5()">Проверить</button>
+    <button onclick="resetMulti5()">Сбросить</button>
+  </div>
+</section>
+
+<section id="t6" style="
+    background: var(--card); 
+    border: 1px solid var(--border); 
+    border-radius: 16px; 
+    padding: 30px; 
+    margin-top: 20px; 
+    overflow: hidden;
+">
+  <h2 style="font-family: 'Unbounded', sans-serif; color: var(--accent); margin-top: 0;">06 — Блок - Схема</h2>
+  <p style="color:var(--muted); font-size:13px; margin-bottom:20px">
+    Визуальная схема процесса интеграции Cloud Firestore и анализа производительности.
+  </p>
+
+  <div class="task-panel" id="panel5" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+    
+    <img
+        src="schemas/image5.png" 
+        alt="Блок-схема Firestore"
+        style="
+            max-width: 100%; 
+            height: auto; 
+            display: block; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+        "
+        onerror="this.style.display='none'; document.getElementById('schemaPlaceholder74').style.display='flex';"
+    >
+
+    <div id="schemaPlaceholder74" style="
+        display: none; 
+        flex-direction: column; 
+        align-items: center; 
+        padding: 40px; 
+        border: 2px dashed var(--border); 
+        border-radius: 12px; 
+        color: var(--muted); 
+        text-align: center;
+        width: 100%;
+        box-sizing: border-box;
+    ">
+        <div style="font-size: 50px; margin-bottom: 10px;">🖼️</div>
+        <p>Файл не найден по адресу: <br><code style="color:var(--accent)">schemas/image5.png</code></p>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  // Логика для 6 раздела (если нужна динамика)
+  document.addEventListener('DOMContentLoaded', () => {
+    const schemaImg = document.querySelector('#panel5 img');
+    if (schemaImg) {
+      // Можно добавить анимацию появления при скролле
+      schemaImg.style.transition = 'transform 0.5s ease';
+      schemaImg.onmouseover = () => schemaImg.style.transform = 'scale(1.02)';
+      schemaImg.onmouseout = () => schemaImg.style.transform = 'scale(1)';
+    }
+  });
+</script>
+
+<footer>
+  <p>Тема 75 · Интеграция облачных баз данных Firebase Firestore · Интерактивная рабочая тетрадь</p>
+</footer>
+
+<script>
+// =========== СОСТОЯНИЕ ===========
+const ST = { done: [false,false,false,false,false], pts: [0,0,0,0,0] };
+
+function sync() {
+  const d = ST.done.filter(Boolean).length;
+  const total = ST.pts.reduce((a,b)=>a+b,0);
+  document.getElementById('progFill').style.width = (d/5*100)+'%';
+  document.getElementById('progText').textContent = d + ' / 5 заданий';
+  document.getElementById('scoreEl').textContent = total;
+}
+function complete(i, pts) {
+  if (!ST.done[i]) {
+    ST.done[i] = true; ST.pts[i] = pts;
+    document.getElementById('nav'+(i+1)).classList.add('done');
+    sync();
+  }
+}
+function showResult(id, type, html) {
+  const el = document.getElementById(id);
+  el.className = 'result-box show ' + type;
+  el.innerHTML = html;
+}
+
+// =========== 01 КВИЗ ===========
+const Q1data = [
+  {
+    q: 'Какой метод Firestore используется для подписки на обновления данных в реальном времени?',
+    opts: [
+      'get()',
+      'addSnapshotListener()',
+      'addValueEventListener()',
+      'observe()'
+    ],
+    ans: 1,
+    exp: 'addSnapshotListener() — подписывает слушателя, который вызывается мгновенно при каждом изменении документа или коллекции. get() — только одноразовое чтение.'
+  },
+  {
+    q: 'Что произойдёт при вызове set(data) на существующем документе Firestore?',
+    opts: [
+      'Только указанные поля обновятся, остальные сохранятся',
+      'Документ будет полностью перезаписан переданными данными',
+      'Метод вернёт ошибку, так как документ уже существует',
+      'Создастся новый документ с автоматическим ID'
+    ],
+    ans: 1,
+    exp: 'set() полностью перезаписывает документ. Поля, не указанные в вызове, будут удалены. Чтобы сохранить существующие поля, нужно использовать set(data, SetOptions.merge()) или update().'
+  },
+  {
+    q: 'Как в Firestore реализовать атомарную запись сразу в несколько документов?',
+    opts: [
+      'Вызвать set() несколько раз подряд в цикле',
+      'Использовать WriteBatch — пакетную запись до 500 операций',
+      'Использовать addSnapshotListener() с флагом atomic',
+      'Использовать метод multiSet()'
+    ],
+    ans: 1,
+    exp: 'WriteBatch (db.batch()) позволяет собрать до 500 операций (set, update, delete) и применить их атомарно одним вызовом commit(). Если одна операция упадёт — откатятся все.'
+  }
+];
+let q1ans = [];
+
+function renderQ1() {
+  q1ans = Array(Q1data.length).fill(null);
+  const wrap = document.getElementById('q1wrap');
+  wrap.innerHTML = '';
+  Q1data.forEach((q, qi) => {
+    const div = document.createElement('div');
+    div.className = 'q-block';
+    div.innerHTML = `<div class="q-num">ВОПРОС ${qi+1}</div><div class="q-text">${q.q}</div>`;
+    const opts = document.createElement('div');
+    opts.className = 'quiz-options';
+    q.opts.forEach((o, oi) => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-opt';
+      btn.innerHTML = `<span class="opt-label">${String.fromCharCode(65+oi)}</span>${o}`;
+      btn.onclick = () => {
+        if (q1ans[qi] !== null) return;
+        q1ans[qi] = oi;
+        opts.querySelectorAll('.quiz-opt').forEach((b, bi) => {
+          b.disabled = true;
+          if (bi === q.ans) b.classList.add('correct');
+          else if (bi === oi) b.classList.add('wrong');
+        });
+      };
+      opts.appendChild(btn);
+    });
+    div.appendChild(opts);
+    wrap.appendChild(div);
+  });
+}
+function checkQ1() {
+  const right = q1ans.filter((a,i) => a === Q1data[i].ans).length;
+  const pts = Math.round(right / Q1data.length * 20);
+  const exps = Q1data.map(q => '• ' + q.exp).join('<br>');
+  if (right === Q1data.length) {
+    showResult('r1','success', `✅ Все ${Q1data.length} ответа верны! +${pts} очков<br><br>${exps}`);
+    complete(0, pts);
+  } else {
+    showResult('r1','error', `❌ Верных: ${right}/${Q1data.length}. Разбор ответов:<br><br>${exps}`);
+    if (right > 0) complete(0, pts);
+  }
+}
+function resetQ1() { document.getElementById('r1').className='result-box'; renderQ1(); }
+renderQ1();
+
+// =========== 02 СОРТИРОВКА ===========
+const sortOrder2 = ['s1','s2','s3','s4','s5'];
+let ds2 = null;
+
+function initSort2() {
+  const list = document.getElementById('sl2');
+  const items = [...list.children];
+  for (let i = items.length-1; i > 0; i--) list.insertBefore(items[Math.floor(Math.random()*(i+1))], items[i]);
+  list.querySelectorAll('.sort-item').forEach(item => {
+    item.classList.remove('correct-pos','wrong-pos');
+    item.querySelector('.sort-num').textContent = '?';
+    item.ondragstart = () => { ds2 = item; item.classList.add('dragging'); };
+    item.ondragend   = () => item.classList.remove('dragging');
+    item.ondragover  = e => e.preventDefault();
+    item.ondrop      = e => {
+      e.preventDefault();
+      if (ds2 && ds2 !== item) {
+        const all = [...list.querySelectorAll('.sort-item')];
+        all.indexOf(ds2) < all.indexOf(item) ? item.after(ds2) : item.before(ds2);
+      }
+    };
+  });
+}
+function checkSort2() {
+  const list = document.getElementById('sl2');
+  const items = [...list.querySelectorAll('.sort-item')];
+  let ok = 0;
+  items.forEach((item, i) => {
+    item.querySelector('.sort-num').textContent = i+1;
+    item.classList.remove('correct-pos','wrong-pos');
+    if (item.dataset.v === sortOrder2[i]) { item.classList.add('correct-pos'); ok++; }
+    else item.classList.add('wrong-pos');
+  });
+  const pts = Math.round(ok/5*20);
+  if (ok === 5) {
+    showResult('r2','success','✅ Правильно! add() → set() → update() → FieldValue.delete() → delete(). +'+pts+' очков');
+    complete(1, pts);
+  } else {
+    showResult('r2','error',`❌ Правильно: ${ok}/5. Верный порядок: add() → set() → update() → FieldValue.delete() → delete()`);
+    if (ok > 0) complete(1, pts);
+  }
+}
+function resetSort2() { document.getElementById('r2').className='result-box'; initSort2(); }
+initSort2();
+
+// =========== 03 ВСТАВЬ КОД ===========
+const fillAns3 = {
+  b1: 'collection',
+  b2: 'document',
+  b3: 'set',
+  b4: 'addSnapshotListener',
+  b5: 'whereEqualTo'
+};
+function checkFill3() {
+  let ok = 0;
+  Object.entries(fillAns3).forEach(([id, ans]) => {
+    const el = document.getElementById(id);
+    const v = el.value.trim().toLowerCase().replace(/['"()\s]/g,'');
+    el.classList.remove('correct','wrong');
+    if (v === ans.toLowerCase()) { el.classList.add('correct'); ok++; }
+    else el.classList.add('wrong');
+  });
+  const pts = Math.round(ok/5*20);
+  if (ok===5) {
+    showResult('r3','success','✅ Все поля заполнены верно! +'+pts+' очков');
+    complete(2,pts);
+  } else {
+    showResult('r3','error',`❌ Верно: ${ok}/5. Ответы: collection, document, set, addSnapshotListener, whereEqualTo`);
+    if(ok>0) complete(2,pts);
+  }
+}
+function resetFill3() {
+  Object.keys(fillAns3).forEach(id => {
+    const el=document.getElementById(id); el.value=''; el.classList.remove('correct','wrong');
+  });
+  document.getElementById('r3').className='result-box';
+}
+
+// =========== 04 СОПОСТАВЛЕНИЕ ===========
+let mSel = null, mCount = 0;
+function mClick(el, key) {
+  if (el.classList.contains('matched')) return;
+  if (!mSel) {
+    document.querySelectorAll('.match-item').forEach(m => m.classList.remove('selected'));
+    el.classList.add('selected'); mSel = el;
+  } else {
+    if (mSel === el) { el.classList.remove('selected'); mSel=null; return; }
+    const sA = mSel.closest('.match-col').querySelector('.match-col-title').textContent;
+    const sB = el.closest('.match-col').querySelector('.match-col-title').textContent;
+    if (sA===sB) { mSel.classList.remove('selected'); el.classList.add('selected'); mSel=el; return; }
+    if (mSel.dataset.k === el.dataset.k) {
+      mSel.classList.remove('selected'); mSel.classList.add('matched');
+      el.classList.add('matched'); mSel=null; mCount++;
+      if (mCount===6) {
+        showResult('r4','success','✅ Все 6 пар найдены! +20 очков 🎉');
+        complete(3,20);
+      }
+    } else {
+      mSel.classList.add('wrong-match'); el.classList.add('wrong-match');
+      const a=mSel, b=el;
+      setTimeout(()=>{ a.classList.remove('selected','wrong-match'); b.classList.remove('wrong-match'); mSel=null; },900);
+    }
+  }
+}
+
+// =========== 05 МУЛЬТИВЫБОР ===========
+const M5data = [
+  {
+    q: 'Какие утверждения о запросах и безопасности Firestore верны?',
+    opts: [
+      { t:'Составные индексы нужны для запросов с несколькими условиями', ok:true },
+      { t:'Firestore поддерживает встроенный полнотекстовый поиск', ok:false },
+      { t:'Security Rules работают на стороне сервера без кода бэкенда', ok:true },
+      { t:'Пагинация реализуется через startAfter() и limit()', ok:true },
+    ]
+  },
+  {
+    q: 'Что верно про операции записи и транзакции в Firestore?',
+    opts: [
+      { t:'WriteBatch позволяет применить до 500 операций атомарно', ok:true },
+      { t:'update() создаст документ если его не существует', ok:false },
+      { t:'runTransaction() гарантирует атомарное чтение и запись', ok:true },
+      { t:'addSnapshotListener нужно отписывать чтобы избежать утечки памяти', ok:true },
+    ]
+  }
+];
+function renderMulti5() {
+  const wrap = document.getElementById('mwrap');
+  wrap.innerHTML = '';
+  M5data.forEach((q, qi) => {
+    const div = document.createElement('div');
+    div.className = 'q-block';
+    div.innerHTML = `<div class="q-num">ВОПРОС ${qi+1}</div><div class="q-text">${q.q}</div>`;
+    const chips = document.createElement('div');
+    chips.className = 'chips';
+    q.opts.forEach(o => {
+      const chip = document.createElement('div');
+      chip.className = 'chip'; chip.textContent = o.t;
+      chip.onclick = () => {
+        if (!chip.classList.contains('correct') && !chip.classList.contains('wrong-selected'))
+          chip.classList.toggle('selected');
+      };
+      chips.appendChild(chip);
+    });
+    div.appendChild(chips);
+    wrap.appendChild(div);
+  });
+}
+function checkMulti5() {
+  let got=0, total=0;
+  const blocks = document.getElementById('mwrap').querySelectorAll('.q-block');
+  M5data.forEach((q,qi) => {
+    const chips=[...blocks[qi].querySelectorAll('.chip')];
+    q.opts.forEach((o,oi) => {
+      const chip=chips[oi], sel=chip.classList.contains('selected');
+      chip.classList.remove('selected');
+      if (o.ok) {
+        total++;
+        if (sel) { chip.classList.add('correct'); got++; }
+        else chip.classList.add('missed');
+      } else if (sel) {
+        chip.classList.add('wrong-selected');
+      }
+    });
+  });
+  const pts = Math.round(got/total*20);
+  if (got===total) {
+    showResult('r5','success',`✅ Все ${total} правильных варианта отмечены! +${pts} очков`);
+    complete(4,pts);
+  } else {
+    showResult('r5','error',`❌ Верно: ${got}/${total}. Зелёным — правильные, контуром — пропущенные.`);
+    if (got>0) complete(4,pts);
+  }
+}
+function resetMulti5() { document.getElementById('r5').className='result-box'; renderMulti5(); }
+renderMulti5();
+sync();
+</script>
+</body>
+</html>
