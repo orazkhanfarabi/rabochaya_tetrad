@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тема 72 — Оценка производительности</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e1a; --surface:#111827; --card:#1a2236; --border:#2a3a55;
+  --accent:#00d4ff; --accent2:#7c3aed; --accent3:#10b981;
+  --danger:#ef4444; --warn:#f59e0b; --text:#e2e8f0; --muted:#64748b;
+  --code-bg:#0d1117; --text-body:#94a3b8;
+  --hover-bg:rgba(0,212,255,0.05); --grid:rgba(0,212,255,0.03);
+}
+body.light {
+  --bg:#f0f4ff; --surface:#ffffff; --card:#f8faff; --border:#dde3f5;
+  --accent:#4f6ef7; --accent2:#7c3aed; --accent3:#10b981;
+  --danger:#ef4444; --warn:#d97706; --text:#1a2236; --muted:#6b7a99;
+  --code-bg:#eef1fb; --text-body:#3a4a6b;
+  --hover-bg:rgba(79,110,247,0.06); --grid:rgba(79,110,247,0.05);
+}
+body.light::before {
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px) !important;
+}
+/* Светлая тема — цвета элементов */
+body.light .theory-box    { color:var(--text-body); }
+body.light .sort-item     { color:var(--text-body); }
+body.light .match-item    { color:var(--text-body); background:var(--card); }
+body.light .chip          { color:var(--text-body); background:var(--card); }
+body.light .quiz-opt      { color:var(--text); background:var(--card); }
+body.light .tab-btn       { color:var(--muted); }
+body.light .tab-btn:hover { color:var(--accent); background:var(--hover-bg); }
+body.light .tab-btn.active{ color:var(--accent); border-bottom-color:var(--accent); }
+body.light .header        { background:linear-gradient(180deg,rgba(79,110,247,0.06) 0%,transparent 100%); }
+body.light .quiz-opt:hover:not(:disabled) { border-color:var(--accent); background:var(--hover-bg); }
+body.light .match-item:hover   { border-color:var(--accent); }
+body.light .match-item.selected{ background:rgba(79,110,247,0.08); border-color:var(--accent); }
+body.light .chip:hover         { border-color:var(--accent); }
+body.light .chip.selected      { background:rgba(79,110,247,0.1); border-color:var(--accent); color:var(--accent); }
+body.light .sort-item:hover    { border-color:var(--accent); }
+body.light .btn                { border-color:var(--accent); color:var(--accent); }
+body.light .btn:hover          { background:var(--hover-bg); box-shadow:0 4px 16px rgba(79,110,247,0.15); }
+body.light .btn-primary        { background:var(--accent); color:#fff; border-color:var(--accent); }
+body.light .btn-primary:hover  { background:#3a5ce8; }
+body.light .feedback.info      { background:rgba(79,110,247,0.08); border-color:var(--accent); color:var(--accent); }
+body.light .schema-wrap        { background:var(--card); }
+body.light .schema-wrap img    { box-shadow:0 4px 24px rgba(79,110,247,0.1); }
+
+/* Кнопка темы */
+.theme-toggle {
+  position:fixed; bottom:28px; right:28px; z-index:999;
+  width:52px; height:52px; border-radius:50%;
+  border:2px solid var(--accent); background:var(--card); color:var(--accent);
+  font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  transition:transform 0.3s,box-shadow 0.3s,background 0.35s,border-color 0.35s;
+  padding:0; margin:0; line-height:1; letter-spacing:0;
+}
+.theme-toggle:hover { transform:translateY(-3px) scale(1.1); box-shadow:0 8px 28px rgba(0,0,0,0.3),0 0 16px rgba(0,212,255,0.3); }
+body.light .theme-toggle { box-shadow:0 4px 20px rgba(79,110,247,0.2); }
+body.light .theme-toggle:hover { box-shadow:0 8px 28px rgba(79,110,247,0.25),0 0 16px rgba(79,110,247,0.2); }
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  min-height:100vh; overflow-x:hidden; line-height:1.7;
+  transition:background 0.35s,color 0.35s;
+}
+body::before {
+  content:''; position:fixed; inset:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:40px 40px; pointer-events:none; z-index:0;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADER */
+.header{position:relative;z-index:1;padding:48px 32px 32px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);transition:background 0.35s,border-color 0.35s;}
+.header::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.topic-badge{display:inline-block;background:var(--accent2);color:#fff;font-size:11px;font-weight:700;letter-spacing:2px;padding:4px 12px;border-radius:2px;margin-bottom:16px;}
+.header h1{font-family:'Unbounded',sans-serif;font-size:clamp(20px,4vw,36px);font-weight:900;line-height:1.2;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{margin-top:12px;color:var(--muted);font-size:13px;max-width:600px;}
+.progress-bar-wrap{margin-top:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.progress-bar{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;max-width:400px;transition:background 0.35s;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.4s;border-radius:2px;}
+.progress-text{font-size:12px;color:var(--muted);}
+.score-badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;color:var(--muted);transition:background 0.35s,border-color 0.35s;}
+.score-num{color:var(--accent);font-weight:700;}
+
+/* TABS */
+.tabs{position:relative;z-index:1;display:flex;gap:4px;padding:20px 32px 0;border-bottom:1px solid var(--border);overflow-x:auto;transition:border-color 0.35s;}
+.tab-btn{background:transparent;border:none;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;padding:10px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;}
+.tab-btn:hover{color:var(--accent);background:var(--hover-bg);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-btn .check{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent3);margin-left:6px;vertical-align:middle;opacity:0;}
+.tab-btn.done .check{opacity:1;}
+
+/* MAIN */
+.main{position:relative;z-index:1;padding:32px;max-width:900px;margin:0 auto;}
+.task-panel{display:none;animation:fadeIn 0.3s ease;}
+.task-panel.active{display:block;}
+.task-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:28px;}
+.task-number{font-family:'Unbounded',sans-serif;font-size:48px;font-weight:900;color:var(--border);line-height:1;min-width:60px;}
+.task-title{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;}
+.task-desc{font-size:13px;color:var(--muted);line-height:1.7;}
+
+/* THEORY */
+.theory-box{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:20px 24px;margin-bottom:24px;font-size:13px;line-height:1.8;color:var(--text-body);transition:background 0.35s,border-color 0.35s,color 0.35s;}
+.theory-box strong{color:var(--accent);}
+.theory-label{font-size:10px;letter-spacing:2px;color:var(--accent);font-weight:700;margin-bottom:10px;display:block;}
+
+/* QUIZ */
+.quiz-options{display:flex;flex-direction:column;gap:10px;margin:20px 0;}
+.quiz-opt{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 18px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);text-align:left;transition:all 0.2s;display:flex;align-items:center;gap:12px;}
+.quiz-opt:hover:not(:disabled){border-color:var(--accent);background:var(--hover-bg);}
+.quiz-opt:disabled{cursor:default;}
+.quiz-opt.correct{border-color:var(--accent3);background:rgba(16,185,129,0.1);color:var(--accent3);}
+.quiz-opt.wrong{border-color:var(--danger);background:rgba(239,68,68,0.1);color:var(--danger);}
+.opt-label{width:24px;height:24px;border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+
+/* SORT */
+.sort-list{display:flex;flex-direction:column;gap:8px;margin:16px 0;}
+.sort-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:12px;cursor:grab;display:flex;align-items:center;gap:12px;transition:all 0.2s;user-select:none;color:var(--text-body);}
+.sort-item:hover{border-color:var(--accent);}
+.sort-handle{color:var(--muted);font-size:16px;}
+.sort-num{width:24px;height:24px;background:var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;color:var(--text);}
+.sort-item.correct-pos{border-color:var(--accent3);}
+.sort-item.wrong-pos{border-color:var(--danger);}
+
+/* MATCH */
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;}
+.match-col{display:flex;flex-direction:column;gap:8px;}
+.match-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:12px;cursor:pointer;transition:all 0.2s;min-height:52px;display:flex;align-items:center;line-height:1.5;color:var(--text-body);}
+.match-item:hover{border-color:var(--accent);}
+.match-item.selected{border-color:var(--accent);background:rgba(0,212,255,0.08);}
+.match-item.matched{border-color:var(--accent3);background:rgba(16,185,129,0.08);cursor:default;}
+.match-item.wrong-match{border-color:var(--danger);background:rgba(239,68,68,0.08);}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;cursor:pointer;transition:all 0.2s;color:var(--text-body);}
+.chip:hover{border-color:var(--accent);}
+.chip.selected{background:rgba(0,212,255,0.1);border-color:var(--accent);color:var(--accent);}
+.chip.correct{border-color:var(--accent3);background:rgba(16,185,129,0.1);color:var(--accent3);}
+.chip.wrong-selected{border-color:var(--danger);background:rgba(239,68,68,0.1);color:var(--danger);}
+
+/* BUTTONS */
+.btn{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;padding:10px 24px;border-radius:6px;cursor:pointer;transition:all 0.2s;letter-spacing:1px;}
+.btn:hover{background:var(--hover-bg);}
+.btn-primary{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+.btn-primary:hover{filter:brightness(1.12);}
+.btn-row{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;}
+
+/* FEEDBACK */
+.feedback{border-radius:8px;padding:14px 18px;margin-top:16px;font-size:13px;line-height:1.6;display:none;}
+.feedback.show{display:block;animation:fadeIn 0.3s ease;}
+.feedback.success{background:rgba(16,185,129,0.1);border:1px solid var(--accent3);color:var(--accent3);}
+.feedback.error{background:rgba(239,68,68,0.1);border:1px solid var(--danger);color:var(--danger);}
+.feedback.info{background:rgba(0,212,255,0.08);border:1px solid var(--accent);color:var(--accent);}
+
+/* БЛОК-СХЕМА */
+.schema-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;transition:background 0.35s,border-color 0.35s;}
+.schema-wrap img{max-width:100%;height:auto;border-radius:8px;display:block;margin:0 auto;box-shadow:0 4px 28px rgba(0,0,0,0.35);transition:box-shadow 0.35s;}
+.schema-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:280px;border:2px dashed var(--border);border-radius:10px;color:var(--muted);font-size:13px;line-height:1.9;padding:40px 24px;background:var(--surface);transition:background 0.35s,border-color 0.35s,color 0.35s;}
+.schema-placeholder .icon{font-size:56px;opacity:0.4;}
+.schema-hint{margin-top:20px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:8px;padding:14px 20px;font-size:12px;color:var(--muted);text-align:left;line-height:2;transition:background 0.35s,border-color 0.35s;}
+.schema-hint code{color:var(--accent);background:var(--code-bg);padding:2px 7px;border-radius:4px;font-size:11px;}
+
+@media(max-width:600px){
+  .main{padding:20px 16px;} .tabs{padding:16px 16px 0;}
+  .match-grid{grid-template-columns:1fr;}
+  .theme-toggle{bottom:18px;right:18px;width:44px;height:44px;font-size:18px;}
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">☀️</button>
+
+<div class="header">
+  <div class="topic-badge">ТЕМА 72</div>
+  <h1>Оценка и анализ производительности<br>мобильных приложений</h1>
+  <p>5 интерактивных заданий + блок-схема</p>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-text" id="progressText">0 / 5 заданий</div>
+    <div class="score-badge">Очки: <span class="score-num" id="scoreDisplay">0</span></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab(0)" id="tab0">01 Квиз<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(1)" id="tab1">02 Метрики<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(2)" id="tab2">03 Сортировка<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(3)" id="tab3">04 Сопоставление<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(4)" id="tab4">05 Диагностика<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(5)" id="tab5">06 Блок-схема</button>
+</div>
+
+<div class="main">
+
+  <!-- 01: QUIZ -->
+  <div class="task-panel active" id="panel0">
+    <div class="task-header"><div class="task-number">01</div><div>
+      <div class="task-title">Метрики производительности</div>
+      <div class="task-desc">Выберите правильный ответ. Читайте теорию перед ответом.</div>
+    </div></div>
+    <div class="theory-box"><span class="theory-label">📚 ТЕОРИЯ</span>
+      <strong>Ключевые метрики:</strong><br><br>
+      • <strong>FPS</strong> — частота кадров. Норма: 60 FPS (16.6 мс/кадр). Ниже 30 — "дёргание"<br>
+      • <strong>Cold Start</strong> — от нажатия иконки до готовности UI. Норма: до 2 сек<br>
+      • <strong>Memory Leak</strong> — память не возвращается системе. Ведёт к крашу<br>
+      • <strong>Network Latency</strong> — задержка ответа сервера<br>
+      • <strong>CPU Throttling</strong> — перегрев снижает частоту CPU, приложение тормозит<br>
+      • <strong>ANR</strong> — UI-поток заблокирован более 5 секунд (Android)
+    </div>
+    <div id="q1container"></div>
+    <div class="feedback" id="fb1"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="checkQ1()">Проверить</button>
+      <button class="btn" onclick="resetQ1()">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- 02: МЕТРИКИ -->
+  <div class="task-panel" id="panel1">
+    <div class="task-header"><div class="task-number">02</div><div>
+      <div class="task-title">Оцени состояние приложения</div>
+      <div class="task-desc">Для каждого показателя выберите: норма, предупреждение или критично</div>
+    </div></div>
+    <div class="theory-box"><span class="theory-label">📚 ТЕОРИЯ</span>
+      <strong>Пороговые значения:</strong><br><br>
+      <strong>FPS:</strong> ✅ 60 | ⚠️ 30–59 | ❌ ниже 30<br>
+      <strong>Cold Start:</strong> ✅ до 2 сек | ⚠️ 2–5 сек | ❌ более 5 сек<br>
+      <strong>RAM:</strong> ✅ до 150 МБ | ⚠️ 150–300 МБ | ❌ более 300 МБ<br>
+      <strong>Crash Rate:</strong> ✅ менее 0.1% | ⚠️ 0.1–1% | ❌ более 1%<br>
+      <strong>Battery Drain:</strong> ✅ до 3%/час | ⚠️ 3–8% | ❌ более 8%
+    </div>
+    <div id="metricsContainer"></div>
+    <div class="feedback" id="fb2"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="checkMetrics()">Проверить оценки</button>
+      <button class="btn" onclick="resetMetrics()">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- 03: СОРТИРОВКА -->
+  <div class="task-panel" id="panel2">
+    <div class="task-header"><div class="task-number">03</div><div>
+      <div class="task-title">Порядок диагностики</div>
+      <div class="task-desc">Расставьте этапы в правильной последовательности перетаскиванием</div>
+    </div></div>
+    <div class="theory-box"><span class="theory-label">📚 ТЕОРИЯ</span>
+      <strong>Методология диагностики производительности:</strong><br><br>
+      <strong>1. Обнаружение</strong> — жалоба или аномалия в метриках<br>
+      <strong>2. Воспроизведение</strong> — стабильно повторить на устройстве<br>
+      <strong>3. Профилирование</strong> — запуск Android Profiler / Instruments<br>
+      <strong>4. Анализ</strong> — найти горячие точки<br>
+      <strong>5. Оптимизация</strong> — фоновый поток, кэш, lazy loading<br>
+      <strong>6. Проверка</strong> — повторный прогон профайлера
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Перетащите блоки в правильном порядке:</p>
+    <div class="sort-list" id="sortList2">
+      <div class="sort-item" draggable="true" data-val="optimize"><span class="sort-handle">⠿</span><span class="sort-num">?</span><div>⚡ <strong style="color:var(--accent)">Оптимизация</strong> — фоновый поток, кэш, lazy loading</div></div>
+      <div class="sort-item" draggable="true" data-val="detect"><span class="sort-handle">⠿</span><span class="sort-num">?</span><div>🔍 <strong style="color:var(--accent)">Обнаружение</strong> — жалоба или аномалия</div></div>
+      <div class="sort-item" draggable="true" data-val="verify"><span class="sort-handle">⠿</span><span class="sort-num">?</span><div>✅ <strong style="color:var(--accent)">Проверка</strong> — повторный прогон профайлера</div></div>
+      <div class="sort-item" draggable="true" data-val="profile"><span class="sort-handle">⠿</span><span class="sort-num">?</span><div>📊 <strong style="color:var(--accent)">Профилирование</strong> — Android Profiler / Instruments</div></div>
+      <div class="sort-item" draggable="true" data-val="reproduce"><span class="sort-handle">⠿</span><span class="sort-num">?</span><div>🔁 <strong style="color:var(--accent)">Воспроизведение</strong> — стабильно повторить проблему</div></div>
+      <div class="sort-item" draggable="true" data-val="analyze"><span class="sort-handle">⠿</span><span class="sort-num">?</span><div>🎯 <strong style="color:var(--accent)">Анализ</strong> — найти горячие точки</div></div>
+    </div>
+    <div class="feedback" id="fb3"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="checkSort2()">Проверить порядок</button>
+      <button class="btn" onclick="resetSort2()">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- 04: СОПОСТАВЛЕНИЕ -->
+  <div class="task-panel" id="panel3">
+    <div class="task-header"><div class="task-number">04</div><div>
+      <div class="task-title">Инструмент → Что измеряет</div>
+      <div class="task-desc">Нажмите на инструмент, затем на его назначение. Найдите все 6 пар.</div>
+    </div></div>
+    <div class="theory-box"><span class="theory-label">📚 ТЕОРИЯ</span>
+      <strong>Инструменты профилирования:</strong><br><br>
+      • <strong>CPU Profiler</strong> — нагрузка на процессор по функциям<br>
+      • <strong>Memory Profiler</strong> — график RAM; рост = утечка<br>
+      • <strong>Energy Profiler</strong> — расход батареи когда и почему<br>
+      • <strong>Network Profiler</strong> — размер, время, частота запросов<br>
+      • <strong>Systrace</strong> — задержки на уровне ОС Android<br>
+      • <strong>Instruments (Xcode)</strong> — Time Profiler, Leaks, Energy Log для iOS
+    </div>
+    <div class="match-grid">
+      <div class="match-col" id="mLeft">
+        <div class="match-item" onclick="matchClick(this)" data-id="cpu">CPU Profiler</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="mem">Memory Profiler</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="energy">Energy Profiler</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="net">Network Profiler</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="sys">Systrace</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="xcode">Instruments (Xcode)</div>
+      </div>
+      <div class="match-col" id="mRight">
+        <div class="match-item" onclick="matchClick(this)" data-id="net">Размер, время и частота сетевых запросов</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="energy">Расход батареи — когда и почему</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="xcode">iOS-профайлер: Time Profiler, Leaks, Energy Log</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="cpu">Какие функции потребляют больше всего CPU</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="sys">Задержки на уровне ОС Android</div>
+        <div class="match-item" onclick="matchClick(this)" data-id="mem">График RAM; постоянный рост = утечка</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+
+  <!-- 05: ДИАГНОСТИКА -->
+  <div class="task-panel" id="panel4">
+    <div class="task-header"><div class="task-number">05</div><div>
+      <div class="task-title">Диагностика по симптомам</div>
+      <div class="task-desc">Прочитайте жалобу и выберите ВСЕ верные причины</div>
+    </div></div>
+    <div class="theory-box"><span class="theory-label">📚 ТЕОРИЯ</span>
+      <strong>Типичные проблемы и причины:</strong><br><br>
+      🐌 <strong>Лагает прокрутка</strong> → тяжёлые операции в главном потоке, нет кэша, нет RecyclerView<br>
+      🔋 <strong>Садится батарея</strong> → постоянный GPS, запросы каждые 5 сек, WakeLock<br>
+      💾 <strong>Вылетает через 10 мин</strong> → утечка памяти<br>
+      🐢 <strong>Долгий старт</strong> → тяжёлые операции в onCreate()
+    </div>
+    <div id="diagContainer"></div>
+    <div class="feedback" id="fb5"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="checkDiag()">Проверить диагноз</button>
+      <button class="btn" onclick="resetDiag()">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- 06: БЛОК-СХЕМА -->
+  <div class="task-panel" id="panel5">
+    <div class="task-header"><div class="task-number">06</div><div>
+      <div class="task-title">Блок-схема</div>
+      <div class="task-desc">Визуальная схема процесса оценки производительности мобильного приложения</div>
+    </div></div>
+
+    <div class="schema-wrap">
+      <!--
+        ЗАМЕНИ src="schemas/image1.png" НА ПУТЬ К СВОЕМУ ФАЙЛУ:
+          src="blokschema.png"       — файл рядом с HTML
+          src="images/schema.png"    — файл в папке images
+          src="schemas/tema72.jpg"   — файл в папке schemas
+      -->
+      <img
+        src="C:\Users\Admin\Desktop\Orazkhan_Farabi_PO_9_22_1\interactivity\tema\schemas\image2.png"
+        alt="Блок-схема оценки производительности"
+        onerror="this.style.display='none';document.getElementById('schemaPlaceholder').style.display='flex';"
+      >
+      <div class="schema-placeholder" id="schemaPlaceholder" style="display:none">
+        <div class="icon">🖼️</div>
+        <div>
+          Изображение не найдено.<br>
+          Открой HTML в редакторе и замени путь в теге<br>
+          <code style="color:var(--accent);background:var(--code-bg);padding:2px 8px;border-radius:4px">&lt;img src="..."&gt;</code>
+        </div>
+        <div style="font-size:12px;opacity:0.8">
+          Например: <code style="color:var(--accent);background:var(--code-bg);padding:2px 8px;border-radius:4px">src="blokschema.png"</code><br>
+          Файл должен лежать рядом с этим HTML или в указанной папке
+        </div>
+      </div>
+    </div>
+
+    <div class="schema-hint">
+      💡 <strong style="color:var(--warn)">Как вставить блок-схему:</strong><br>
+      1. Положи файл изображения в ту же папку, что и этот HTML<br>
+      2. Открой файл в редакторе (VS Code, Notepad++)<br>
+      3. Найди строку <code>src="schemas/image1.png"</code><br>
+      4. Замени на имя своего файла: <code>src="моя_схема.png"</code><br>
+      5. Сохрани и обнови страницу в браузере (F5)
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ТЕМА
+const THEME_KEY='t72_theme';
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light');
+  const btn=document.getElementById('themeBtn');
+  btn.textContent=isLight?'🌙':'☀️';
+  btn.title=isLight?'Тёмная тема':'Светлая тема';
+  localStorage.setItem(THEME_KEY,isLight?'light':'dark');
+}
+(function(){
+  if(localStorage.getItem(THEME_KEY)==='light'){
+    document.body.classList.add('light');
+    window.addEventListener('DOMContentLoaded',()=>{
+      const btn=document.getElementById('themeBtn');
+      if(btn){btn.textContent='🌙';btn.title='Тёмная тема';}
+    });
+  }
+})();
+
+// STATE
+const state={scores:[0,0,0,0,0],done:[false,false,false,false,false]};
+function updateProgress(){
+  const done=state.done.filter(Boolean).length;
+  const total=state.scores.reduce((a,b)=>a+b,0);
+  document.getElementById('progressFill').style.width=(done/5*100)+'%';
+  document.getElementById('progressText').textContent=`${done} / 5 заданий`;
+  document.getElementById('scoreDisplay').textContent=total;
+}
+function switchTab(i){
+  document.querySelectorAll('.task-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel'+i).classList.add('active');
+  document.getElementById('tab'+i).classList.add('active');
+}
+function markDone(i,pts){
+  if(!state.done[i]){state.done[i]=true;state.scores[i]=pts;document.getElementById('tab'+i).classList.add('done');updateProgress();}
+}
+function showFeedback(id,type,msg){
+  const el=document.getElementById(id);el.className='feedback show '+type;el.innerHTML=msg;
+}
+
+// ЗАДАНИЕ 1
+const q1Data=[
+  {q:"При каком значении FPS пользователь замечает «дёргание»?",opts:["Ниже 60 FPS","Ниже 45 FPS","Ниже 30 FPS","Ниже 15 FPS"],correct:2,exp:"Ниже 30 FPS движение прерывисто. 60 FPS — цель (16.6 мс/кадр)."},
+  {q:"Что такое Cold Start?",opts:["Запуск в холоде","Время от нажатия иконки до готовности UI","Перезагрузка","Сброс кэша"],correct:1,exp:"Cold Start — приложение с нуля. Норма до 2 секунд."},
+  {q:"Постоянно растущий график в Memory Profiler — это:",opts:["Норма, кэширование","Полная мощность","Утечка памяти","Загрузка файла"],correct:2,exp:"Memory Leak: GC не освобождает объекты. RAM растёт до краша."}
+];
+let q1ans=[];
+function renderQ1(){
+  const c=document.getElementById('q1container');c.innerHTML='';q1ans=new Array(q1Data.length).fill(null);
+  q1Data.forEach((q,qi)=>{
+    const div=document.createElement('div');div.style.marginBottom='24px';
+    div.innerHTML=`<p style="font-size:14px;margin-bottom:12px;color:var(--text)"><strong style="color:var(--muted);font-size:11px">ВОПРОС ${qi+1}</strong><br>${q.q}</p>`;
+    const opts=document.createElement('div');opts.className='quiz-options';
+    q.opts.forEach((o,oi)=>{
+      const btn=document.createElement('button');btn.className='quiz-opt';
+      btn.innerHTML=`<span class="opt-label">${String.fromCharCode(65+oi)}</span>${o}`;
+      btn.onclick=()=>{
+        if(q1ans[qi]!==null)return;q1ans[qi]=oi;
+        opts.querySelectorAll('.quiz-opt').forEach((b,bi)=>{b.disabled=true;if(bi===q.correct)b.classList.add('correct');else if(bi===oi)b.classList.add('wrong');});
+      };
+      opts.appendChild(btn);
+    });
+    div.appendChild(opts);c.appendChild(div);
+  });
+}
+function checkQ1(){
+  const correct=q1ans.filter((a,i)=>a===q1Data[i].correct).length;
+  const pts=Math.round(correct/q1Data.length*20);
+  const exps=q1Data.map(q=>`• ${q.exp}`).join('<br>');
+  if(correct===q1Data.length){showFeedback('fb1','success',`✅ Все верно! +${pts} очков<br><br>${exps}`);markDone(0,pts);}
+  else{showFeedback('fb1','error',`❌ Правильных: ${correct}/${q1Data.length}<br><br>${exps}`);if(correct>0)markDone(0,pts);}
+}
+function resetQ1(){document.getElementById('fb1').className='feedback';renderQ1();}
+renderQ1();
+
+// ЗАДАНИЕ 2
+const metricsData=[
+  {label:'FPS',display:'24 FPS',correct:'bad',hint:'24 FPS — критично. Норма: 60 FPS.'},
+  {label:'Cold Start',display:'1.4 сек',correct:'good',hint:'1.4 сек — отлично! Норма до 2 сек.'},
+  {label:'RAM',display:'240 МБ',correct:'warn',hint:'240 МБ — зона предупреждения (150–300 МБ).'},
+  {label:'Crash Rate',display:'2.3%',correct:'bad',hint:'2.3% — критично. Норма менее 1%.'},
+  {label:'Battery Drain',display:'4%/час',correct:'warn',hint:'4%/час — повышен (норма до 3%). Проверьте GPS.'},
+];
+function renderMetrics(){
+  const c=document.getElementById('metricsContainer');c.innerHTML='';
+  metricsData.forEach((m,i)=>{
+    const div=document.createElement('div');
+    div.style.cssText='margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;transition:background 0.35s,border-color 0.35s';
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-weight:700;color:var(--text)">${m.label}</span>
+        <span style="font-size:18px;font-weight:900;color:var(--accent)">${m.display}</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${['good','warn','bad'].map(opt=>`
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--card);flex:1;min-width:80px;justify-content:center;transition:background 0.35s,border-color 0.35s;color:var(--text-body)">
+            <input type="radio" name="metric${i}" value="${opt}" style="accent-color:var(--accent);width:14px;height:14px">
+            ${{good:'✅ Норма',warn:'⚠️ Внимание',bad:'❌ Критично'}[opt]}
+          </label>`).join('')}
+      </div>
+      <div id="mhint${i}" style="font-size:12px;margin-top:10px;display:none"></div>`;
+    c.appendChild(div);
+  });
+}
+function checkMetrics(){
+  let correct=0;
+  metricsData.forEach((m,i)=>{
+    const sel=document.querySelector(`input[name="metric${i}"]:checked`);
+    const hint=document.getElementById(`mhint${i}`);hint.style.display='block';
+    if(sel&&sel.value===m.correct){correct++;hint.style.color='var(--accent3)';hint.textContent='✅ '+m.hint;}
+    else{hint.style.color='var(--danger)';hint.textContent='❌ '+m.hint;}
+  });
+  const pts=Math.round(correct/metricsData.length*20);
+  if(correct===metricsData.length){showFeedback('fb2','success',`✅ Все оценены верно! +${pts} очков`);markDone(1,pts);}
+  else{showFeedback('fb2','error',`❌ Верно: ${correct}/${metricsData.length}. Смотрите подсказки.`);if(correct>0)markDone(1,pts);}
+}
+function resetMetrics(){document.getElementById('fb2').className='feedback';renderMetrics();}
+renderMetrics();
+
+// ЗАДАНИЕ 3
+const sortOrder2=['detect','reproduce','profile','analyze','optimize','verify'];
+let dragSrc2=null;
+function initSort2(){
+  const list=document.getElementById('sortList2');
+  for(let i=list.children.length;i>=0;i--) list.appendChild(list.children[Math.random()*i|0]);
+  list.querySelectorAll('.sort-item').forEach(item=>{
+    item.addEventListener('dragstart',()=>{dragSrc2=item;item.classList.add('dragging');});
+    item.addEventListener('dragend',()=>item.classList.remove('dragging'));
+    item.addEventListener('dragover',e=>e.preventDefault());
+    item.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(dragSrc2&&dragSrc2!==item){
+        const items=[...list.querySelectorAll('.sort-item')];
+        if(items.indexOf(dragSrc2)<items.indexOf(item))item.after(dragSrc2);else item.before(dragSrc2);
+      }
+    });
+  });
+}
+function checkSort2(){
+  const items=[...document.getElementById('sortList2').querySelectorAll('.sort-item')];
+  let correct=0;
+  items.forEach((item,i)=>{
+    item.querySelector('.sort-num').textContent=i+1;
+    item.classList.remove('correct-pos','wrong-pos');
+    if(item.dataset.val===sortOrder2[i]){item.classList.add('correct-pos');correct++;}
+    else item.classList.add('wrong-pos');
+  });
+  const pts=Math.round(correct/6*20);
+  if(correct===6){showFeedback('fb3','success',`✅ Правильная методология! +${pts} очков`);markDone(2,pts);}
+  else{showFeedback('fb3','error',`❌ Верно: ${correct}/6. Порядок: Обнаружение → Воспроизведение → Профилирование → Анализ → Оптимизация → Проверка`);if(correct>0)markDone(2,pts);}
+}
+function resetSort2(){
+  document.getElementById('fb3').className='feedback';
+  document.getElementById('sortList2').querySelectorAll('.sort-item').forEach(item=>{item.querySelector('.sort-num').textContent='?';item.className='sort-item';});
+  initSort2();
+}
+initSort2();
+
+// ЗАДАНИЕ 4
+let matchSel=null,matchCount=0;
+function matchClick(el){
+  if(el.classList.contains('matched'))return;
+  if(!matchSel){el.classList.add('selected');matchSel=el;}
+  else{
+    if(matchSel===el){el.classList.remove('selected');matchSel=null;return;}
+    const s1=matchSel.closest('.match-col').id,s2=el.closest('.match-col').id;
+    if(s1===s2){matchSel.classList.remove('selected');el.classList.add('selected');matchSel=el;return;}
+    if(matchSel.dataset.id===el.dataset.id){
+      matchSel.classList.remove('selected');matchSel.classList.add('matched');
+      el.classList.add('matched');matchSel=null;matchCount++;
+      if(matchCount===6){showFeedback('fb4','success','✅ Все инструменты сопоставлены! +20 очков');markDone(3,20);}
+    } else {
+      const prev=matchSel;matchSel.classList.add('wrong-match');el.classList.add('wrong-match');
+      setTimeout(()=>{prev.classList.remove('selected','wrong-match');el.classList.remove('wrong-match');matchSel=null;},800);
+    }
+  }
+}
+
+// ЗАДАНИЕ 5
+const diagData=[
+  {symptom:'🐌 При прокрутке ленты новостей интерфейс дёргается и подвисает',opts:[
+    {t:'Изображения загружаются синхронно в главном потоке',correct:true},
+    {t:'Неправильная версия Android SDK',correct:false},
+    {t:'Нет переиспользования View (нет RecyclerView)',correct:true},
+    {t:'Слишком яркая цветовая схема',correct:false},
+    {t:'Тяжёлые вычисления на UI-потоке',correct:true},
+  ]},
+  {symptom:'🔋 Приложение очень быстро разряжает телефон в фоне',opts:[
+    {t:'Постоянный запрос геолокации (GPS) в фоне',correct:true},
+    {t:'Тёмная тема потребляет больше энергии',correct:false},
+    {t:'Сетевые запросы каждые 5–10 секунд',correct:true},
+    {t:'Удержание WakeLock',correct:true},
+    {t:'Большое количество экранов',correct:false},
+  ]}
+];
+function renderDiag(){
+  const c=document.getElementById('diagContainer');c.innerHTML='';
+  diagData.forEach((d,di)=>{
+    const div=document.createElement('div');div.style.marginBottom='28px';
+    div.innerHTML=`
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:8px;padding:16px 20px;margin-bottom:12px;font-size:13px;line-height:1.7;color:var(--text-body);transition:background 0.35s,border-color 0.35s">
+        <span style="color:var(--warn);font-size:10px;letter-spacing:2px;font-weight:700;display:block;margin-bottom:8px">ЖАЛОБА ${di+1}</span>
+        ${d.symptom}</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Выберите ВСЕ верные причины:</p>`;
+    const chips=document.createElement('div');chips.className='chips';
+    d.opts.forEach(o=>{
+      const chip=document.createElement('div');chip.className='chip';chip.textContent=o.t;
+      chip.onclick=()=>{if(!chip.classList.contains('correct')&&!chip.classList.contains('wrong-selected'))chip.classList.toggle('selected');};
+      chips.appendChild(chip);
+    });
+    div.appendChild(chips);c.appendChild(div);
+  });
+}
+function checkDiag(){
+  let totalCorrect=0,totalAll=0;
+  const cont=document.getElementById('diagContainer');
+  diagData.forEach((d,di)=>{
+    const chips=[...cont.querySelectorAll('.chips')][di].querySelectorAll('.chip');
+    d.opts.forEach((o,oi)=>{
+      const chip=chips[oi],sel=chip.classList.contains('selected');
+      chip.classList.remove('selected');
+      if(o.correct){chip.classList.add('correct');if(sel)totalCorrect++;totalAll++;}
+      else if(sel)chip.classList.add('wrong-selected');
+    });
+  });
+  const pts=Math.round(totalCorrect/totalAll*20);
+  if(totalCorrect===totalAll){showFeedback('fb5','success',`✅ Все причины верны! +${pts} очков`);markDone(4,pts);}
+  else{showFeedback('fb5','error',`❌ Верно: ${totalCorrect}/${totalAll}. Правильные выделены зелёным.`);if(totalCorrect>0)markDone(4,pts);}
+}
+function resetDiag(){document.getElementById('fb5').className='feedback';renderDiag();}
+renderDiag();
+updateProgress();
+</script>
+</body>
+</html>

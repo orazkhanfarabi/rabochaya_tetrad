@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тема 71 — Документирование API</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ===== ТЁМНАЯ ТЕМА (по умолчанию) ===== */
+  :root {
+    --bg:        #0a0e1a;
+    --surface:   #111827;
+    --card:      #1a2236;
+    --border:    #2a3a55;
+    --accent:    #00d4ff;
+    --accent2:   #7c3aed;
+    --accent3:   #10b981;
+    --danger:    #ef4444;
+    --warn:      #f59e0b;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --code-bg:   #0d1117;
+    --hover-bg:  rgba(0,212,255,0.05);
+    --text-body: #94a3b8;
+    --grid-col:  rgba(0,212,255,0.03);
+  }
+
+  /* ===== СВЕТЛАЯ ТЕМА ===== */
+  body.light {
+    --bg:        #f0f4ff;
+    --surface:   #ffffff;
+    --card:      #f8faff;
+    --border:    #dde3f5;
+    --accent:    #4f6ef7;
+    --accent2:   #7c3aed;
+    --accent3:   #10b981;
+    --danger:    #ef4444;
+    --warn:      #f59e0b;
+    --text:      #1a2236;
+    --muted:     #6b7a99;
+    --code-bg:   #eef1fb;
+    --hover-bg:  rgba(79,110,247,0.06);
+    --text-body: #3a4a6b;
+    --grid-col:  rgba(79,110,247,0.05);
+  }
+  body.light::before {
+    background-image:
+      linear-gradient(var(--grid-col) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-col) 1px, transparent 1px) !important;
+  }
+  /* Светлая тема — переопределяем все элементы */
+  body.light .theory-box    { color: var(--text-body); background: var(--card); border-color: var(--border); }
+  body.light .code-block    { background: var(--code-bg); border-color: var(--border); }
+  body.light .quiz-opt      { background: var(--card); color: var(--text); border-color: var(--border); }
+  body.light .quiz-opt:hover:not(:disabled) { background: var(--hover-bg); border-color: var(--accent); }
+  body.light .sort-item     { background: var(--card); color: var(--text); border-color: var(--border); }
+  body.light .sort-item:hover { border-color: var(--accent); }
+  body.light .match-item    { background: var(--card); color: var(--text); border-color: var(--border); }
+  body.light .match-item:hover:not(.matched) { background: var(--hover-bg); border-color: var(--accent); }
+  body.light .chip          { background: var(--card); color: var(--text); border-color: var(--border); }
+  body.light .chip:hover    { border-color: var(--accent); }
+  body.light .drag-item     { background: var(--surface); color: var(--text); border-color: var(--border); }
+  body.light .drag-list     { background: var(--card); border-color: var(--border); }
+  body.light .score-badge   { background: var(--card); border-color: var(--border); }
+  body.light .header        { background: linear-gradient(180deg, var(--hover-bg) 0%, transparent 100%); border-color: var(--border); }
+  body.light .tabs          { border-color: var(--border); }
+  body.light .tab-btn:hover { color: var(--text); }
+  body.light .btn:hover     { background: var(--hover-bg); box-shadow: 0 4px 16px rgba(79,110,247,0.2); }
+  body.light .btn-primary   { background: var(--accent); color: #fff; }
+  body.light .btn-primary:hover { background: #6b87f8; }
+  body.light .schema-placeholder { background: var(--surface); border-color: var(--border); }
+  body.light .task-number   { color: var(--border); }
+  body.light .theme-toggle:hover { box-shadow: 0 8px 28px rgba(79,110,247,0.2), 0 0 16px rgba(79,110,247,0.2); }
+
+  /* ===== КНОПКА ТЕМЫ ===== */
+  .theme-toggle {
+    position: fixed; bottom: 28px; right: 28px; z-index: 999;
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 2px solid var(--accent); background: var(--card); color: var(--accent);
+    font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.35s ease;
+    padding: 0; margin: 0; letter-spacing: 0; line-height: 1;
+  }
+  .theme-toggle:hover {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.3), 0 0 16px rgba(0,212,255,0.3);
+  }
+
+  /* ===== БАЗА ===== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh; overflow-x: hidden;
+    transition: background 0.35s ease, color 0.35s ease;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--grid-col) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-col) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+    transition: background-image 0.35s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px);} to { opacity:1; transform:translateY(0);} }
+
+  /* ===== HEADER ===== */
+  .header {
+    position: relative; z-index: 1;
+    padding: 48px 32px 32px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%);
+    transition: background 0.35s ease, border-color 0.35s ease;
+  }
+  .topic-badge {
+    display: inline-block; background: var(--accent2); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; padding: 4px 12px;
+    border-radius: 2px; margin-bottom: 16px;
+  }
+  .header h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(20px, 4vw, 36px); font-weight: 900; line-height: 1.2;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .header p { margin-top: 12px; color: var(--muted); font-size: 13px; max-width: 600px; }
+  .progress-bar-wrap { margin-top: 24px; display: flex; align-items: center; gap: 16px; }
+  .progress-bar {
+    flex: 1; height: 4px; background: var(--border); border-radius: 2px;
+    overflow: hidden; max-width: 400px; transition: background 0.35s ease;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease; border-radius: 2px;
+  }
+  .progress-text { font-size: 12px; color: var(--muted); }
+
+  /* ===== TABS ===== */
+  .tabs {
+    position: relative; z-index: 1;
+    display: flex; gap: 4px; padding: 20px 32px 0;
+    border-bottom: 1px solid var(--border); overflow-x: auto;
+    transition: border-color 0.35s ease;
+  }
+  .tab-btn {
+    background: transparent; border: none; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 10px 16px;
+    cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn .check {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent3); margin-left: 6px; vertical-align: middle; opacity: 0;
+  }
+  .tab-btn.done .check { opacity: 1; }
+
+  /* ===== MAIN ===== */
+  .main { position: relative; z-index: 1; padding: 32px; max-width: 900px; margin: 0 auto; }
+  .task-panel { display: none; animation: fadeIn 0.3s ease; }
+  .task-panel.active { display: block; }
+
+  .task-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+  .task-number {
+    font-family: 'Unbounded', sans-serif; font-size: 48px; font-weight: 900;
+    color: var(--border); line-height: 1; min-width: 60px; transition: color 0.35s ease;
+  }
+  .task-title { font-family: 'Unbounded', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .task-desc  { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+  /* ===== THEORY ===== */
+  .theory-box {
+    background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 20px 24px; margin-bottom: 24px;
+    font-size: 13px; line-height: 1.8; color: var(--text-body);
+    transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+  }
+  .theory-box strong { color: var(--accent); }
+  .theory-label { font-size: 10px; letter-spacing: 2px; color: var(--accent); font-weight: 700; margin-bottom: 10px; display: block; }
+
+  /* ===== CODE ===== */
+  .code-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 20px; font-size: 12px; line-height: 1.8; overflow-x: auto; margin: 16px 0;
+    transition: background 0.35s ease, border-color 0.35s ease;
+  }
+  .code-block .kw   { color: #ff79c6; }
+  .code-block .str  { color: #f1fa8c; }
+  .code-block .prop { color: var(--accent); }
+  .code-block .val  { color: var(--accent3); }
+  .code-block .cmt  { color: #6272a4; }
+  .code-block .num  { color: #bd93f9; }
+
+  /* ===== QUIZ ===== */
+  .quiz-options { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+  .quiz-opt {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 18px; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text);
+    text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 12px;
+  }
+  .quiz-opt:hover:not(:disabled) { border-color: var(--accent); background: var(--hover-bg); }
+  .quiz-opt:disabled { cursor: default; }
+  .quiz-opt.correct { border-color: var(--accent3); background: rgba(16,185,129,0.1); color: var(--accent3); }
+  .quiz-opt.wrong   { border-color: var(--danger);  background: rgba(239,68,68,0.1);  color: var(--danger); }
+  .opt-label {
+    width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+
+  /* ===== DRAG AND DROP ===== */
+  .drag-container { display: flex; gap: 24px; flex-wrap: wrap; }
+  .drag-list {
+    flex: 1; min-width: 200px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; min-height: 180px;
+    transition: background 0.35s ease, border-color 0.35s ease;
+  }
+  .drag-list h4 { font-size: 11px; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .drag-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 14px; font-size: 12px; cursor: grab;
+    margin-bottom: 8px; transition: all 0.2s; user-select: none;
+  }
+  .drag-item:hover { border-color: var(--accent); }
+  .drag-item.dragging { opacity: 0.5; }
+  .drag-list.drag-over { border-color: var(--accent); background: var(--hover-bg); }
+
+  /* ===== SORT ===== */
+  .sort-list { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+  .sort-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; font-size: 12px; cursor: grab;
+    display: flex; align-items: center; gap: 12px; transition: all 0.2s; user-select: none;
+  }
+  .sort-item:hover { border-color: var(--accent); }
+  .sort-handle { color: var(--muted); font-size: 16px; }
+  .sort-num {
+    width: 24px; height: 24px; background: var(--border); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .sort-item.correct-pos { border-color: var(--accent3); }
+  .sort-item.wrong-pos   { border-color: var(--danger); }
+
+  /* ===== FILL BLANK ===== */
+  .fill-blank {
+    display: inline-block; border-bottom: 2px solid var(--accent);
+    min-width: 100px; padding: 0 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    background: transparent; color: var(--accent); outline: none; text-align: center;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .fill-blank.correct { border-color: var(--accent3); color: var(--accent3); }
+  .fill-blank.wrong   { border-color: var(--danger);  color: var(--danger); }
+
+  /* ===== MATCH ===== */
+  .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .match-col  { display: flex; flex-direction: column; gap: 8px; }
+  .match-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+    min-height: 52px; display: flex; align-items: center;
+  }
+  .match-item:hover:not(.matched) { border-color: var(--accent); background: var(--hover-bg); }
+  .match-item.selected    { border-color: var(--accent); background: rgba(0,212,255,0.08); }
+  .match-item.matched     { border-color: var(--accent3); background: rgba(16,185,129,0.08); cursor: default; }
+  .match-item.wrong-match { border-color: var(--danger);  background: rgba(239,68,68,0.08); }
+
+  /* ===== CHIPS ===== */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+  .chip {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 6px 16px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip.selected       { background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent); }
+  .chip.correct        { border-color: var(--accent3); background: rgba(16,185,129,0.1); color: var(--accent3); }
+  .chip.wrong-selected { border-color: var(--danger); background: rgba(239,68,68,0.1); color: var(--danger); }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    background: transparent; border: 1px solid var(--accent); color: var(--accent);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+    padding: 10px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; letter-spacing: 1px;
+  }
+  .btn:hover { background: var(--hover-bg); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,212,255,0.2); }
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn-primary:hover { background: #33deff; }
+  .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+
+  /* ===== FEEDBACK ===== */
+  .feedback {
+    border-radius: 8px; padding: 14px 18px; margin-top: 16px;
+    font-size: 13px; line-height: 1.6; display: none;
+  }
+  .feedback.show    { display: block; animation: fadeIn 0.3s ease; }
+  .feedback.success { background: rgba(16,185,129,0.1); border: 1px solid var(--accent3); color: var(--accent3); }
+  .feedback.error   { background: rgba(239,68,68,0.1);  border: 1px solid var(--danger);  color: var(--danger); }
+  .feedback.info    { background: rgba(0,212,255,0.1);  border: 1px solid var(--accent);  color: var(--accent); }
+
+  /* ===== SCORE ===== */
+  .score-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 6px 16px; font-size: 12px; color: var(--muted);
+    transition: background 0.35s ease, border-color 0.35s ease;
+  }
+  .score-num { color: var(--accent); font-weight: 700; }
+
+  /* ===== БЛОК-СХЕМА ===== */
+  .schema-wrap { text-align: center; margin-top: 8px; }
+  .schema-wrap img {
+    max-width: 100%; border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+    transition: border-color 0.35s ease, box-shadow 0.35s ease;
+  }
+  .schema-placeholder {
+    background: var(--surface); border: 2px dashed var(--border); border-radius: 10px;
+    padding: 60px 20px; color: var(--muted); font-size: 13px; line-height: 2.2;
+    transition: background 0.35s ease, border-color 0.35s ease;
+  }
+  .schema-placeholder .icon { font-size: 48px; display: block; margin-bottom: 16px; }
+
+  @media (max-width: 600px) {
+    .main  { padding: 20px 16px; }
+    .tabs  { padding: 16px 16px 0; }
+    .match-grid { grid-template-columns: 1fr; }
+    .drag-container { flex-direction: column; }
+    .theme-toggle { bottom: 18px; right: 18px; width: 46px; height: 46px; font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- КНОПКА СМЕНЫ ТЕМЫ -->
+<button class="theme-toggle" id="themeBtn"
+  onclick="document.body.classList.toggle('light');this.textContent=document.body.classList.contains('light')?'🌙':'☀️'"
+  title="Сменить тему">☀️</button>
+
+<div class="header">
+  <div class="topic-badge">ТЕМА 71</div>
+  <h1>Документирование сервисов<br>и API в мобильной разработке</h1>
+  <p>5 интерактивных заданий для изучения теории и проверки знаний</p>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-text" id="progressText">0 / 5 заданий</div>
+    <div class="score-badge">Очки: <span class="score-num" id="scoreDisplay">0</span></div>
+  </div>
+</div>
+
+<!-- ВКЛАДКИ — добавлена 6-я -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab(0)" id="tab0">01 Квиз<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(1)" id="tab1">02 Сортировка<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(2)" id="tab2">03 Заполни код<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(3)" id="tab3">04 Сопоставление<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(4)" id="tab4">05 Анализ<span class="check"></span></button>
+  <button class="tab-btn" onclick="switchTab(5)" id="tab5">06 Блок-схема</button>
+</div>
+
+<div class="main">
+
+  <!-- ЗАДАНИЕ 1: Quiz -->
+  <div class="task-panel active" id="panel0">
+    <div class="task-header">
+      <div class="task-number">01</div>
+      <div>
+        <div class="task-title">Теория API-документации</div>
+        <div class="task-desc">Выберите правильный ответ на каждый вопрос. Изучите теорию перед ответом.</div>
+      </div>
+    </div>
+    <div class="theory-box">
+      <span class="theory-label">📚 ТЕОРИЯ</span>
+      <strong>OpenAPI (Swagger)</strong> — стандарт описания REST API в формате YAML/JSON. Файл содержит: эндпоинты, методы HTTP, параметры запроса, форматы ответов и схемы аутентификации.<br><br>
+      <strong>Ключевые инструменты документирования:</strong><br>
+      • <strong>Swagger UI</strong> — интерактивная документация с возможностью тест-запросов<br>
+      • <strong>Redoc</strong> — красивая статичная документация из OpenAPI-файла<br>
+      • <strong>Postman</strong> — документирование + тестирование API-коллекций<br>
+      • <strong>Javadoc / KDoc</strong> — документирование кода Java/Kotlin (тегами /** */)<br><br>
+      <strong>HTTP-методы:</strong> GET (получить), POST (создать), PUT (заменить), PATCH (обновить), DELETE (удалить)
+    </div>
+    <div id="quiz1Questions"></div>
+    <div class="feedback" id="quiz1Feedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="checkQuiz1()">Проверить</button>
+      <button class="btn" onclick="resetQuiz1()">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- ЗАДАНИЕ 2: Sorting -->
+  <div class="task-panel" id="panel1">
+    <div class="task-header">
+      <div class="task-number">02</div>
+      <div>
+        <div class="task-title">Структура OpenAPI-спецификации</div>
+        <div class="task-desc">Расставьте секции OpenAPI 3.0 файла в правильном порядке перетаскиванием</div>
+      </div>
+    </div>
+    <div class="theory-box">
+      <span class="theory-label">📚 ТЕОРИЯ</span>
+      Файл OpenAPI 3.0 состоит из обязательных секций в определённом логическом порядке:<br><br>
+      <strong>openapi</strong> → версия спецификации (например, "3.0.3")<br>
+      <strong>info</strong> → метаданные API (название, версия, описание, контакты)<br>
+      <strong>servers</strong> → список базовых URL серверов (production, staging, dev)<br>
+      <strong>paths</strong> → эндпоинты и операции (GET /users, POST /auth и т.д.)<br>
+      <strong>components</strong> → переиспользуемые схемы, параметры, ответы<br>
+      <strong>security</strong> → глобальные требования аутентификации
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Перетащите блоки в правильном порядке (сверху вниз):</p>
+    <div class="sort-list" id="sortList">
+      <div class="sort-item" draggable="true" data-val="paths">
+        <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+        <div><span style="color:var(--accent)">paths:</span> — эндпоинты и HTTP-операции</div>
+      </div>
+      <div class="sort-item" draggable="true" data-val="openapi">
+        <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+        <div><span style="color:var(--accent)">openapi:</span> — версия спецификации</div>
+      </div>
+      <div class="sort-item" draggable="true" data-val="security">
+        <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+        <div><span style="color:var(--accent)">security:</span> — требования аутентификации</div>
+      </div>
+      <div class="sort-item" draggable="true" data-val="servers">
+        <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+        <div><span style="color:var(--accent)">servers:</span> — список URL-серверов</div>
+      </div>
+      <div class="sort-item" draggable="true" data-val="info">
+        <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+        <div><span style="color:var(--accent)">info:</span> — метаданные API</div>
+      </div>
+      <div class="sort-item" draggable="true" data-val="components">
+        <span class="sort-handle">⠿</span><span class="sort-num">?</span>
+        <div><span style="color:var(--accent)">components:</span> — переиспользуемые схемы</div>
+      </div>
+    </div>
+    <div class="feedback" id="sort2Feedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="checkSort()">Проверить порядок</button>
+      <button class="btn" onclick="resetSort()">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- ЗАДАНИЕ 3: Fill in the code -->
+  <div class="task-panel" id="panel2">
+    <div class="task-header">
+      <div class="task-number">03</div>
+      <div>
+        <div class="task-title">Заполни OpenAPI-документацию</div>
+        <div class="task-desc">Вставьте правильные ключевые слова в YAML-спецификацию</div>
+      </div>
+    </div>
+    <div class="theory-box">
+      <span class="theory-label">📚 ТЕОРИЯ</span>
+      <code style="color:var(--accent)">operationId</code> — уникальный идентификатор операции<br>
+      <code style="color:var(--accent)">summary</code> — краткое описание операции<br>
+      <code style="color:var(--accent)">parameters</code> — список параметров (path, query, header)<br>
+      <code style="color:var(--accent)">responses</code> — возможные ответы по HTTP-кодам<br>
+      <code style="color:var(--accent)">schema</code> — описание структуры данных (тип, свойства)
+    </div>
+    <div class="code-block">
+      <div><span class="prop">paths</span>:</div>
+      <div>&nbsp;&nbsp;<span class="prop">/users/{id}</span>:</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">get</span>:</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop"><input class="fill-blank" id="f1" placeholder="???" style="width:130px"></span>: <span class="str">"getUserById"</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop"><input class="fill-blank" id="f2" placeholder="???" style="width:100px"></span>: <span class="str">"Получить пользователя"</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop"><input class="fill-blank" id="f3" placeholder="???" style="width:110px"></span>:</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="prop">name</span>: <span class="str">id</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">in</span>: <span class="str">path</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">required</span>: <span class="val">true</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop"><input class="fill-blank" id="f4" placeholder="???" style="width:100px"></span>:</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="num">200</span>:</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">description</span>: <span class="str">"Успешно"</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">content</span>:</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">application/json</span>:</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop"><input class="fill-blank" id="f5" placeholder="???" style="width:80px"></span>:</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">$ref</span>: <span class="str">'#/components/schemas/User'</span></div>
+    </div>
+    <p style="font-size:12px;color:var(--muted)">Слова для вставки: <strong style="color:var(--text)">operationId, summary, parameters, responses, schema</strong></p>
+    <div class="feedback" id="fill3Feedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="checkFill()">Проверить</button>
+      <button class="btn" onclick="resetFill()">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- ЗАДАНИЕ 4: Matching -->
+  <div class="task-panel" id="panel3">
+    <div class="task-header">
+      <div class="task-number">04</div>
+      <div>
+        <div class="task-title">Сопоставь инструмент с описанием</div>
+        <div class="task-desc">Нажмите на термин, затем на его описание. Найдите все пары.</div>
+      </div>
+    </div>
+    <div class="theory-box">
+      <span class="theory-label">📚 ТЕОРИЯ</span>
+      <strong>Инструменты документирования API:</strong><br><br>
+      • <strong>Swagger UI</strong> — интерактивная страница из OpenAPI-файла, запросы из браузера<br>
+      • <strong>Redoc</strong> — трёхколоночная документация для публичных API<br>
+      • <strong>Postman</strong> — коллекции запросов + автогенерация публичной документации<br>
+      • <strong>KDoc</strong> — документирование кода Kotlin (/** */ блоки)<br>
+      • <strong>Retrofit</strong> — аннотации @GET/@POST превращаются в документацию<br>
+      • <strong>mermaid.js</strong> — диаграммы последовательностей для API-флоу
+    </div>
+    <div class="match-grid">
+      <div class="match-col" id="matchLeft">
+        <div class="match-item" onclick="matchClick(this,'swagger')" data-id="swagger">Swagger UI</div>
+        <div class="match-item" onclick="matchClick(this,'redoc')"   data-id="redoc">Redoc</div>
+        <div class="match-item" onclick="matchClick(this,'postman')" data-id="postman">Postman</div>
+        <div class="match-item" onclick="matchClick(this,'kdoc')"    data-id="kdoc">KDoc</div>
+        <div class="match-item" onclick="matchClick(this,'retrofit')" data-id="retrofit">Retrofit</div>
+        <div class="match-item" onclick="matchClick(this,'mermaid')" data-id="mermaid">mermaid.js</div>
+      </div>
+      <div class="match-col" id="matchRight">
+        <div class="match-item" onclick="matchClick(this,'mermaid')" data-id="mermaid">Диаграммы последовательностей для API-флоу</div>
+        <div class="match-item" onclick="matchClick(this,'swagger')" data-id="swagger">Интерактивная документация с тест-запросами</div>
+        <div class="match-item" onclick="matchClick(this,'kdoc')"    data-id="kdoc">Документирование кода Kotlin (/** */ блоки)</div>
+        <div class="match-item" onclick="matchClick(this,'postman')" data-id="postman">Коллекции запросов + публичная документация</div>
+        <div class="match-item" onclick="matchClick(this,'retrofit')" data-id="retrofit">Аннотации @GET/@POST как источник документации</div>
+        <div class="match-item" onclick="matchClick(this,'redoc')"   data-id="redoc">Трёхколоночная статичная документация</div>
+      </div>
+    </div>
+    <div class="feedback" id="match4Feedback"></div>
+  </div>
+
+  <!-- ЗАДАНИЕ 5: Multi-select -->
+  <div class="task-panel" id="panel4">
+    <div class="task-header">
+      <div class="task-number">05</div>
+      <div>
+        <div class="task-title">Анализ API-документации</div>
+        <div class="task-desc">Выберите ВСЕ правильные утверждения для каждого вопроса</div>
+      </div>
+    </div>
+    <div class="theory-box">
+      <span class="theory-label">📚 ТЕОРИЯ</span>
+      <strong>Лучшие практики документирования API:</strong><br><br>
+      ✅ Описывайте все возможные HTTP-коды ответа (200, 201, 400, 401, 404, 500)<br>
+      ✅ Используйте реальные примеры запросов и ответов<br>
+      ✅ Документируйте аутентификацию (Bearer Token, API Key, OAuth2)<br>
+      ✅ Описывайте ограничения rate limiting (лимиты запросов в секунду)<br>
+      ✅ Версионирование: /api/v1/, /api/v2/ с changelog изменений<br>
+      ❌ Не оставляйте эндпоинты без описания<br>
+      ❌ Не используйте внутренние названия/жаргон без объяснения
+    </div>
+    <div id="multiQuestions"></div>
+    <div class="feedback" id="multi5Feedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="checkMulti()">Проверить</button>
+      <button class="btn" onclick="resetMulti()">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- ===== ЗАДАНИЕ 6: БЛОК-СХЕМА ===== -->
+  <div class="task-panel" id="panel5">
+    <div class="task-header">
+      <div class="task-number">06</div>
+      <div>
+        <div class="task-title">Блок-схема</div>
+        <div class="task-desc">Визуальная схема процесса документирования API</div>
+      </div>
+    </div>
+
+    <div class="schema-wrap">
+      <!--
+        ┌─────────────────────────────────────────────────────┐
+        │  ЗАМЕНИ  "ИМЯ_ФАЙЛА.png"  НА ИМЯ СВОЕЙ КАРТИНКИ   │
+        │  Например:  src="blokschema.png"                    │
+        │  Файл должен лежать рядом с этим HTML-файлом        │
+        └─────────────────────────────────────────────────────┘
+      -->
+      <img src="C:\Users\Admin\Desktop\Orazkhan_Farabi_PO_9_22_1\interactivity\tema\schemas\image1.png" alt="Блок-схема"
+           onerror="this.style.display='none';document.getElementById('schemaPlaceholder').style.display='block'">
+
+      <div class="schema-placeholder" id="schemaPlaceholder" style="display:none">
+        <span class="icon">🖼️</span>
+        Изображение не найдено.<br>
+        Открой HTML в редакторе и замени <strong>ИМЯ_ФАЙЛА.png</strong><br>
+        на имя своего файла с блок-схемой.<br><br>
+        <span style="color:var(--accent)">Пример:</span> src="blokschema.png"
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ==================== STATE ====================
+const state = { scores:[0,0,0,0,0], done:[false,false,false,false,false] };
+
+function updateProgress() {
+  const done  = state.done.filter(Boolean).length;
+  const total = state.scores.reduce((a,b)=>a+b,0);
+  document.getElementById('progressFill').style.width = (done/5*100)+'%';
+  document.getElementById('progressText').textContent = `${done} / 5 заданий`;
+  document.getElementById('scoreDisplay').textContent = total;
+}
+function switchTab(i) {
+  document.querySelectorAll('.task-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel'+i).classList.add('active');
+  document.getElementById('tab'+i).classList.add('active');
+}
+function markDone(i, pts) {
+  if (!state.done[i]) {
+    state.done[i]=true; state.scores[i]=pts;
+    document.getElementById('tab'+i).classList.add('done');
+    updateProgress();
+  }
+}
+function showFeedback(id, type, msg) {
+  const el=document.getElementById(id);
+  el.className='feedback show '+type;
+  el.innerHTML=msg;
+}
+
+// ==================== ЗАДАНИЕ 1: QUIZ ====================
+const quiz1Data = [
+  { q:"Какой HTTP-метод используется для ЧАСТИЧНОГО обновления ресурса?",
+    opts:["GET","PUT","PATCH","DELETE"], correct:2,
+    exp:"PATCH — частичное обновление (только изменённые поля). PUT — полная замена ресурса." },
+  { q:"В каком формате пишется OpenAPI-спецификация?",
+    opts:["XML или CSV","YAML или JSON","Markdown или HTML","Только JSON"], correct:1,
+    exp:"OpenAPI поддерживает оба формата: YAML (читаемее) и JSON (удобнее для парсинга)." },
+  { q:"Какой HTTP-статус означает 'Ресурс не найден'?",
+    opts:["200","401","404","500"], correct:2,
+    exp:"404 Not Found — сервер не нашёл запрошенный ресурс. 401 — не авторизован, 500 — серверная ошибка." }
+];
+let quiz1Answered=[];
+
+function renderQuiz1() {
+  const container=document.getElementById('quiz1Questions');
+  container.innerHTML='';
+  quiz1Answered=new Array(quiz1Data.length).fill(null);
+  quiz1Data.forEach((q,qi)=>{
+    const div=document.createElement('div');
+    div.style.marginBottom='24px';
+    div.innerHTML=`<p style="font-size:14px;margin-bottom:12px;color:var(--text)"><strong style="color:var(--muted);font-size:11px">ВОПРОС ${qi+1}</strong><br>${q.q}</p>`;
+    const opts=document.createElement('div');
+    opts.className='quiz-options';
+    q.opts.forEach((o,oi)=>{
+      const btn=document.createElement('button');
+      btn.className='quiz-opt';
+      btn.innerHTML=`<span class="opt-label">${String.fromCharCode(65+oi)}</span>${o}`;
+      btn.onclick=()=>{
+        if(quiz1Answered[qi]!==null) return;
+        quiz1Answered[qi]=oi;
+        opts.querySelectorAll('.quiz-opt').forEach((b,bi)=>{
+          b.disabled=true;
+          if(bi===q.correct) b.classList.add('correct');
+          else if(bi===oi)   b.classList.add('wrong');
+        });
+      };
+      opts.appendChild(btn);
+    });
+    div.appendChild(opts);
+    container.appendChild(div);
+  });
+}
+function checkQuiz1() {
+  const correct=quiz1Answered.filter((a,i)=>a===quiz1Data[i].correct).length;
+  const pts=Math.round(correct/quiz1Data.length*20);
+  const exps=quiz1Data.map(q=>`• ${q.exp}`).join('<br>');
+  if(correct===quiz1Data.length){ showFeedback('quiz1Feedback','success',`✅ Все ${quiz1Data.length} ответа верны! +${pts} очков<br><br>${exps}`); markDone(0,pts); }
+  else { showFeedback('quiz1Feedback','error',`❌ Правильных: ${correct}/${quiz1Data.length}. Изучите объяснения:<br><br>${exps}`); if(correct>0) markDone(0,pts); }
+}
+function resetQuiz1(){ document.getElementById('quiz1Feedback').className='feedback'; renderQuiz1(); }
+renderQuiz1();
+
+// ==================== ЗАДАНИЕ 2: SORTING ====================
+const correctOrder=['openapi','info','servers','paths','components','security'];
+let dragSrc=null;
+
+function initSort(){
+  const list=document.getElementById('sortList');
+  for(let i=list.children.length;i>=0;i--) list.appendChild(list.children[Math.random()*i|0]);
+  list.querySelectorAll('.sort-item').forEach(item=>{
+    item.addEventListener('dragstart',e=>{ dragSrc=item; item.classList.add('dragging'); });
+    item.addEventListener('dragend',  e=>{ item.classList.remove('dragging'); });
+    item.addEventListener('dragover', e=>{ e.preventDefault(); });
+    item.addEventListener('drop',     e=>{
+      e.preventDefault();
+      if(dragSrc!==item){
+        const items=[...list.querySelectorAll('.sort-item')];
+        if(items.indexOf(dragSrc)<items.indexOf(item)) item.after(dragSrc);
+        else item.before(dragSrc);
+      }
+    });
+  });
+}
+function checkSort(){
+  const list=document.getElementById('sortList');
+  const items=[...list.querySelectorAll('.sort-item')];
+  const current=items.map(i=>i.dataset.val);
+  let correct=0;
+  items.forEach((item,i)=>{
+    item.querySelector('.sort-num').textContent=i+1;
+    item.classList.remove('correct-pos','wrong-pos');
+    if(current[i]===correctOrder[i]){ item.classList.add('correct-pos'); correct++; }
+    else item.classList.add('wrong-pos');
+  });
+  const pts=Math.round(correct/6*20);
+  if(correct===6){ showFeedback('sort2Feedback','success',`✅ Порядок правильный! +${pts} очков`); markDone(1,pts); }
+  else { showFeedback('sort2Feedback','error',`❌ Правильно: ${correct}/6. Порядок: openapi → info → servers → paths → components → security`); if(correct>0) markDone(1,pts); }
+}
+function resetSort(){
+  document.getElementById('sort2Feedback').className='feedback';
+  document.getElementById('sortList').querySelectorAll('.sort-item').forEach(item=>{
+    item.querySelector('.sort-num').textContent='?';
+    item.classList.remove('correct-pos','wrong-pos');
+  });
+  initSort();
+}
+initSort();
+
+// ==================== ЗАДАНИЕ 3: FILL BLANKS ====================
+const fillAnswers={ f1:'operationId', f2:'summary', f3:'parameters', f4:'responses', f5:'schema' };
+function checkFill(){
+  let correct=0;
+  Object.entries(fillAnswers).forEach(([id,ans])=>{
+    const el=document.getElementById(id);
+    if(el.value.trim().toLowerCase()===ans){ el.classList.add('correct'); el.classList.remove('wrong'); correct++; }
+    else { el.classList.add('wrong'); el.classList.remove('correct'); }
+  });
+  const pts=Math.round(correct/5*20);
+  if(correct===5){ showFeedback('fill3Feedback','success',`✅ Все поля заполнены верно! +${pts} очков`); markDone(2,pts); }
+  else { showFeedback('fill3Feedback','error',`❌ Правильно: ${correct}/5. Ответы: operationId, summary, parameters, responses, schema`); if(correct>0) markDone(2,pts); }
+}
+function resetFill(){
+  Object.keys(fillAnswers).forEach(id=>{ const el=document.getElementById(id); el.value=''; el.className='fill-blank'; });
+  document.getElementById('fill3Feedback').className='feedback';
+}
+
+// ==================== ЗАДАНИЕ 4: MATCHING ====================
+let matchSelected=null, matchedCount=0;
+function matchClick(el,id){
+  if(el.classList.contains('matched')) return;
+  if(!matchSelected){
+    document.querySelectorAll('.match-item').forEach(m=>m.classList.remove('selected'));
+    el.classList.add('selected'); matchSelected=el;
+  } else {
+    if(matchSelected===el){ el.classList.remove('selected'); matchSelected=null; return; }
+    const s1=matchSelected.closest('.match-col').id;
+    const s2=el.closest('.match-col').id;
+    if(s1===s2){ matchSelected.classList.remove('selected'); el.classList.add('selected'); matchSelected=el; return; }
+    if(matchSelected.dataset.id===el.dataset.id){
+      matchSelected.classList.remove('selected'); matchSelected.classList.add('matched');
+      el.classList.add('matched'); matchSelected=null; matchedCount++;
+      if(matchedCount===6){ showFeedback('match4Feedback','success','✅ Все пары найдены! +20 очков'); markDone(3,20); }
+    } else {
+      matchSelected.classList.add('wrong-match'); el.classList.add('wrong-match');
+      const a=matchSelected,b=el;
+      setTimeout(()=>{ a.classList.remove('selected','wrong-match'); b.classList.remove('wrong-match'); matchSelected=null; },800);
+    }
+  }
+}
+
+// ==================== ЗАДАНИЕ 5: MULTI SELECT ====================
+const multiData=[
+  { q:"Какие коды HTTP-ответа ОБЯЗАТЕЛЬНО должны быть задокументированы для эндпоинта аутентификации?",
+    opts:[{t:"200 — успешная аутентификация",correct:true},{t:"101 — Switching Protocols",correct:false},{t:"401 — неверные учётные данные",correct:true},{t:"500 — внутренняя ошибка сервера",correct:true}] },
+  { q:"Что должна содержать хорошая документация REST API?",
+    opts:[{t:"Примеры реальных запросов и ответов",correct:true},{t:"Исходный код всех микросервисов",correct:false},{t:"Описание rate limiting (ограничений запросов)",correct:true},{t:"Changelog версий и миграционные гайды",correct:true}] }
+];
+function renderMulti(){
+  const cont=document.getElementById('multiQuestions'); cont.innerHTML='';
+  multiData.forEach((q,qi)=>{
+    const div=document.createElement('div'); div.style.marginBottom='24px';
+    div.innerHTML=`<p style="font-size:14px;margin-bottom:12px"><strong style="color:var(--muted);font-size:11px">ВОПРОС ${qi+1}</strong><br>${q.q}</p>`;
+    const chips=document.createElement('div'); chips.className='chips';
+    q.opts.forEach(o=>{
+      const chip=document.createElement('div'); chip.className='chip'; chip.textContent=o.t;
+      chip.onclick=()=>{ if(!chip.classList.contains('correct')&&!chip.classList.contains('wrong-selected')) chip.classList.toggle('selected'); };
+      chips.appendChild(chip);
+    });
+    div.appendChild(chips); cont.appendChild(div);
+  });
+}
+function checkMulti(){
+  let totalCorrect=0,totalAll=0;
+  const cont=document.getElementById('multiQuestions');
+  multiData.forEach((q,qi)=>{
+    const chips=[...cont.querySelectorAll('.chips')][qi].querySelectorAll('.chip');
+    q.opts.forEach((o,oi)=>{
+      const chip=chips[oi],selected=chip.classList.contains('selected');
+      chip.classList.remove('selected');
+      if(o.correct){ chip.classList.add('correct'); if(selected) totalCorrect++; }
+      else if(selected) chip.classList.add('wrong-selected');
+      if(o.correct) totalAll++;
+    });
+  });
+  const pts=Math.round(totalCorrect/totalAll*20);
+  if(totalCorrect===totalAll){ showFeedback('multi5Feedback','success',`✅ Все правильные варианты отмечены! +${pts} очков`); markDone(4,pts); }
+  else { showFeedback('multi5Feedback','error',`❌ Выбрано правильно: ${totalCorrect}/${totalAll}. Правильные ответы выделены зелёным.`); if(totalCorrect>0) markDone(4,pts); }
+}
+function resetMulti(){ document.getElementById('multi5Feedback').className='feedback'; renderMulti(); }
+renderMulti();
+updateProgress();
+</script>
+</body>
+</html>
