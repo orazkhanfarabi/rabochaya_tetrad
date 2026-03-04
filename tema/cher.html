@@ -1,304 +1,602 @@
+<!DOCTYPE html>
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тема 7.2 — Производительность мобильных приложений</title>
-    
-    <style>
-    :root{
-      --bg:#0f172a;
-      --panel:#111827;
-      --accent:#22d3ee;
-      --accent2:#38bdf8;
-      --ok:#22c55e;
-      --warn:#f59e0b;
-      --bad:#ef4444;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --border:#1f2937;
-      --code-bg:#0b1220;
-    }
-    
-    *{box-sizing:border-box;margin:0;padding:0}
-    
-    body{
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
-      background:var(--bg);
-      color:var(--text);
-      line-height:1.6;
-    }
-    
-    header{
-      padding:30px;
-      text-align:center;
-      background:linear-gradient(135deg,#0ea5e9,#22d3ee);
-      color:#000;
-    }
-    
-    nav{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      padding:15px;
-      justify-content:center;
-      background:var(--panel);
-      border-bottom:1px solid var(--border);
-    }
-    
-    nav button{
-      padding:8px 14px;
-      border:none;
-      border-radius:6px;
-      background:var(--accent);
-      cursor:pointer;
-      font-weight:600;
-    }
-    
-    section{
-      display:none;
-      padding:30px;
-      max-width:900px;
-      margin:auto;
-    }
-    
-    section.active{display:block}
-    
-    h2{margin-bottom:20px}
-    
-    button.check{
-      margin-top:15px;
-      padding:8px 14px;
-      border:none;
-      border-radius:6px;
-      background:var(--accent2);
-      cursor:pointer;
-    }
-    
-    .result{margin-top:10px;font-weight:600}
-    
-    .progress-wrap{
-      max-width:900px;
-      margin:20px auto;
-      background:var(--panel);
-      border-radius:8px;
-      padding:10px;
-    }
-    
-    .progress-bar{
-      height:16px;
-      background:var(--border);
-      border-radius:10px;
-      overflow:hidden;
-    }
-    
-    .progress-fill{
-      height:100%;
-      width:0%;
-      background:var(--ok);
-      transition:0.4s;
-    }
-    
-    .progress-text{
-      margin-top:6px;
-      text-align:center;
-      font-size:14px;
-      color:var(--muted);
-    }
-    
-    /* === Блок-схема === */
-    
-    .schema-wrap{
-      margin-top:20px;
-      text-align:center;
-    }
-    
-    .schema-wrap img{
-      max-width:100%;
-      border-radius:8px;
-      border:1px solid var(--border);
-    }
-    
-    .schema-placeholder{
-      border:2px dashed var(--border);
-      padding:30px;
-      border-radius:8px;
-      color:var(--muted);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:10px;
-    }
-    
-    .schema-hint{
-      margin-top:18px;
-      font-size:13px;
-      color:var(--muted);
-    }
-    
-    footer{
-      text-align:center;
-      padding:20px;
-      color:var(--muted);
-    }
-    </style>
-    </head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Проверка глоссария — Мобильная разработка</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0a0e1a;
+  --surface: #111827;
+  --card:    #1a2236;
+  --border:  #2a3a55;
+  --accent:  #00d4ff;
+  --accent2: #7c3aed;
+  --accent3: #10b981;
+  --danger:  #ef4444;
+  --warn:    #f59e0b;
+  --text:    #e2e8f0;
+  --muted:   #64748b;
+  --code-bg: #0d1117;
+  --hover-bg:rgba(0,212,255,0.05);
+  --grid:    rgba(0,212,255,0.03);
+  --body:    #94a3b8;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  min-height:100vh; overflow-x:hidden; line-height:1.7;
+}
+body::before{
+  content:''; position:fixed; inset:0;
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:40px 40px; pointer-events:none; z-index:0;
+}
 
-    <header>
-        <h1>Тема 7.2</h1>
-        <h2>6 интерактивных заданий — теория + проверка знаний</h2>
-      </header>
-      
-      <nav>
-        <button onclick="show('t1')">1</button>
-        <button onclick="show('t2')">2</button>
-        <button onclick="show('t3')">3</button>
-        <button onclick="show('t4')">4</button>
-        <button onclick="show('t5')">5</button>
-        <button onclick="show('t6')">6</button>
-      </nav>
-      
-      <div class="progress-wrap">
-        <div class="progress-bar">
-          <div class="progress-fill" id="progFill"></div>
-        </div>
-        <div class="progress-text" id="progText">0 / 6 заданий</div>
-      </div>
-      
-      <!-- =================== ЗАДАНИЕ 1 =================== -->
-      <section id="t1" class="active">
-      <h2>01 — Что такое производительность?</h2>
-      
-      <p><b>Производительность мобильного приложения</b> — это способность работать быстро,
-      стабильно и эффективно использовать ресурсы устройства.</p>
-      
-      <button class="check" onclick="complete(0,10)">Отметить как изучено</button>
-      <div class="result" id="r0"></div>
-      </section>
-      
-      <!-- =================== ЗАДАНИЕ 2 =================== -->
-      <section id="t2">
-      <h2>02 — Основные показатели</h2>
-      
-      <ul>
-      <li>⏱ Время запуска</li>
-      <li>⚡ Скорость отклика</li>
-      <li>🔋 Энергопотребление</li>
-      <li>📶 Стабильность работы</li>
-      </ul>
-      
-      <button class="check" onclick="complete(1,10)">Отметить как изучено</button>
-      <div class="result" id="r1"></div>
-      </section>
-      
-      <!-- =================== ЗАДАНИЕ 3 =================== -->
-      <section id="t3">
-      <h2>03 — Что влияет на производительность?</h2>
-      
-      <ul>
-      <li>Оптимизация кода</li>
-      <li>Работа с памятью</li>
-      <li>Сетевые запросы</li>
-      <li>Качество UI</li>
-      </ul>
-      
-      <button class="check" onclick="complete(2,10)">Отметить как изучено</button>
-      <div class="result" id="r2"></div>
-      </section>
-      
-      <!-- =================== ЗАДАНИЕ 4 =================== -->
-      <section id="t4">
-      <h2>04 — Инструменты анализа</h2>
-      
-      <ul>
-      <li>Профилировщики</li>
-      <li>Логи производительности</li>
-      <li>Тестирование нагрузки</li>
-      </ul>
-      
-      <button class="check" onclick="complete(3,10)">Отметить как изучено</button>
-      <div class="result" id="r3"></div>
-      </section>
-      
-      <!-- =================== ЗАДАНИЕ 5 =================== -->
-      <section id="t5">
-      <h2>05 — Методы оптимизации</h2>
-      
-      <ul>
-      <li>Кэширование данных</li>
-      <li>Минимизация запросов</li>
-      <li>Оптимизация изображений</li>
-      </ul>
-      
-      <button class="check" onclick="complete(4,10)">Отметить как изучено</button>
-      <div class="result" id="r4"></div>
-      </section>
-      
-      <!-- =================== ЗАДАНИЕ 6 =================== -->
-      <section id="t6">
-      <h2>06 — Блок-схема процесса</h2>
-      
-      <p>Визуальная схема процесса оценки производительности мобильного приложения.</p>
-      
-      <div class="schema-wrap">
-        <img 
-          src="schemas/image3.png"
-          alt="Блок-схема оценки производительности"
-          onerror="this.style.display='none';document.getElementById('schemaPlaceholder').style.display='flex';"
-        >
-      
-        <div class="schema-placeholder" id="schemaPlaceholder" style="display:none">
-          <div>🖼️</div>
-          <div>Изображение не найдено. Проверь путь в атрибуте <code>src</code>.</div>
-        </div>
-      </div>
-      
-      <div class="schema-hint">
-      💡 Положи файл рядом с HTML и укажи, например: <code>src="image3.png"</code>
-      </div>
-      
-      <button class="check" onclick="complete(5,10)">Отметить как изучено</button>
-      <div class="result" id="r5"></div>
-      
-      </section>
-      
-      <footer>
-      Тема 7.2 — Производительность мобильных приложений
-      </footer>
+@keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+@keyframes popIn   { from{opacity:0;transform:scale(0.94)}      to{opacity:1;transform:scale(1)} }
+@keyframes shake   { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+@keyframes glow    { 0%,100%{box-shadow:0 0 0 rgba(16,185,129,0)} 50%{box-shadow:0 0 20px rgba(16,185,129,0.3)} }
 
-      <script>
-        const ST = { 
-          done: [false,false,false,false,false,false], 
-          pts:  [0,0,0,0,0,0] 
-        };
-        
-        function show(id){
-          document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
-          document.getElementById(id).classList.add("active");
-        }
-        
-        function complete(index, points){
-          if(!ST.done[index]){
-            ST.done[index] = true;
-            ST.pts[index] = points;
-            document.getElementById("r"+index).textContent = 
-              "✅ Задание засчитано (+" + points + " баллов)";
-            updateProgress();
-          }
-        }
-        
-        function updateProgress(){
-          const completed = ST.done.filter(x=>x).length;
-          const total = ST.done.length;
-          const percent = (completed/total)*100;
-        
-          document.getElementById("progFill").style.width = percent + "%";
-          document.getElementById("progText").textContent =
-            completed + " / " + total + " заданий выполнено";
-        
-          if(completed === total){
-            setTimeout(()=>{
-              alert("🎉 Все задания выполнены! Тема завершена.");
-            },300);
-          }
-        }
-        
-        </script>
+/* HEADER */
+.header{
+  position:relative; z-index:1;
+  padding:48px 32px 36px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(0,212,255,0.06) 0%,transparent 100%);
+  text-align:center;
+}
+.header::before{
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+}
+.badge{
+  display:inline-block; background:var(--accent2); color:#fff;
+  font-size:10px; font-weight:700; letter-spacing:2px;
+  padding:4px 12px; border-radius:2px; margin-bottom:16px;
+}
+.header h1{
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(20px,4vw,34px); font-weight:900; line-height:1.2;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin-bottom:10px;
+}
+.header p{ font-size:13px; color:var(--muted); }
+
+/* PROGRESS */
+.prog-wrap{
+  position:relative; z-index:1;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:16px 32px;
+}
+.prog-top{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:10px; flex-wrap:wrap; gap:8px;
+}
+.prog-label{ font-size:12px; color:var(--muted); }
+.prog-stats{ display:flex; gap:20px; }
+.prog-stat { font-size:12px; }
+.prog-stat .val{ font-weight:700; }
+.prog-stat .val.g{ color:var(--accent3); }
+.prog-stat .val.r{ color:var(--danger); }
+.prog-stat .val.b{ color:var(--accent); }
+.prog-bar  { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.prog-fill {
+  height:100%; border-radius:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  transition:width 0.4s ease;
+}
+
+/* MAIN */
+.main{
+  position:relative; z-index:1;
+  max-width:780px; margin:0 auto; padding:32px 24px 80px;
+}
+
+/* SCREENS */
+.screen{ display:none; }
+.screen.active{ display:block; animation:fadeUp 0.35s ease; }
+
+/* ── START ── */
+.start-box{
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:56px 40px; text-align:center;
+}
+.start-num{
+  font-family:'Unbounded',sans-serif; font-size:72px; font-weight:900; line-height:1;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin-bottom:8px;
+}
+.start-sub { font-size:11px; letter-spacing:2px; color:var(--muted); margin-bottom:32px; }
+.start-box h2{ font-family:'Unbounded',sans-serif; font-size:20px; margin-bottom:14px; }
+.start-box p { font-size:13px; color:var(--body); line-height:1.9; margin-bottom:36px; }
+.start-settings{
+  display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:36px;
+}
+.setting-group{ text-align:left; }
+.setting-group label{
+  display:block; font-size:10px; letter-spacing:2px; color:var(--muted); margin-bottom:8px;
+}
+.setting-group select{
+  background:var(--surface); border:1px solid var(--border); color:var(--text);
+  font-family:'JetBrains Mono',monospace; font-size:12px;
+  padding:8px 14px; border-radius:6px; outline:none; cursor:pointer;
+}
+.setting-group select:focus{ border-color:var(--accent); }
+
+/* ── QUESTION ── */
+.q-wrap{ margin-top:8px; }
+.q-card{
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:36px; animation:popIn 0.3s ease;
+}
+.q-meta{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:20px; flex-wrap:wrap; gap:8px;
+}
+.q-num{ font-size:10px; letter-spacing:2px; color:var(--muted); font-weight:700; }
+.q-category{
+  font-size:10px; letter-spacing:1px; color:var(--accent2);
+  background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.25);
+  padding:3px 10px; border-radius:20px; font-weight:700;
+}
+
+.def-label{
+  font-size:10px; letter-spacing:2px; color:var(--accent); font-weight:700;
+  margin-bottom:12px; display:block;
+}
+.def-text{
+  font-size:14px; line-height:1.9; color:var(--body);
+  background:var(--surface); border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  border-radius:8px; padding:18px 20px; margin-bottom:28px;
+}
+.def-text b{ color:var(--accent); }
+
+.opts-label{
+  font-size:10px; letter-spacing:2px; color:var(--muted); font-weight:700; margin-bottom:12px;
+}
+.opts{ display:flex; flex-direction:column; gap:10px; }
+.opt{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:15px 20px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--text);
+  text-align:left; transition:all 0.18s;
+  display:flex; align-items:center; gap:14px;
+}
+.opt:hover:not(.locked){ border-color:var(--accent); background:var(--hover-bg); transform:translateX(4px); }
+.opt.correct{ border-color:var(--accent3); background:rgba(16,185,129,0.1); color:var(--accent3); animation:glow 0.6s ease; }
+.opt.wrong  { border-color:var(--danger);  background:rgba(239,68,68,0.08);  color:var(--danger); animation:shake 0.35s ease; }
+.opt.reveal { border-color:rgba(16,185,129,0.4); color:rgba(16,185,129,0.6); }
+.opt.locked { cursor:default; }
+.opt-idx{
+  width:30px; height:30px; border:1px solid var(--border); border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; flex-shrink:0; transition:all 0.18s;
+}
+.opt.correct .opt-idx{ background:var(--accent3); border-color:var(--accent3); color:#0a0e1a; }
+.opt.wrong   .opt-idx{ background:var(--danger);  border-color:var(--danger);  color:#fff; }
+
+/* FEEDBACK */
+.feedback{
+  margin-top:18px; padding:14px 18px; border-radius:8px;
+  font-size:13px; line-height:1.6; display:none;
+}
+.feedback.show{ display:block; animation:fadeUp 0.25s ease; }
+.feedback.ok  { background:rgba(16,185,129,0.1); border:1px solid var(--accent3); color:var(--accent3); }
+.feedback.err { background:rgba(239,68,68,0.08); border:1px solid var(--danger);  color:var(--danger); }
+
+/* NEXT BTN */
+.next-row{ display:flex; justify-content:flex-end; margin-top:20px; }
+.btn{
+  background:transparent; border:1px solid var(--accent); color:var(--accent);
+  font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600;
+  padding:11px 28px; border-radius:8px; cursor:pointer;
+  transition:all 0.2s; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:8px;
+}
+.btn:hover      { background:var(--hover-bg); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,212,255,0.15); }
+.btn-primary    { background:var(--accent); color:var(--bg); border-color:var(--accent); }
+.btn-primary:hover{ filter:brightness(1.1); transform:translateY(-2px); }
+.btn-row        { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+/* ── FINISH ── */
+.finish-box{
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:56px 40px; text-align:center; animation:popIn 0.4s ease;
+}
+.finish-emoji{ font-size:72px; margin-bottom:20px; display:block; }
+.finish-box h2{ font-family:'Unbounded',sans-serif; font-size:22px; font-weight:900; margin-bottom:8px; }
+.finish-pct{
+  font-family:'Unbounded',sans-serif; font-size:80px; font-weight:900; line-height:1;
+  background:linear-gradient(135deg,var(--accent3),var(--accent));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin:16px 0 8px;
+}
+.finish-msg{ font-size:13px; color:var(--body); line-height:1.9; margin:16px 0 36px; }
+.finish-grid{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:36px;
+}
+.f-stat{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:18px 12px;
+}
+.f-stat b{ font-family:'Unbounded',sans-serif; font-size:26px; display:block; margin-bottom:6px; }
+.f-stat b.g{ color:var(--accent3); }
+.f-stat b.r{ color:var(--danger); }
+.f-stat b.b{ color:var(--accent); }
+.f-stat span{ font-size:10px; letter-spacing:1.5px; color:var(--muted); }
+
+/* BACK */
+.back-link{
+  position:relative; z-index:1;
+  display:inline-flex; align-items:center; gap:8px;
+  padding:14px 32px; font-size:12px; color:var(--muted);
+  text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover{ color:var(--accent); }
+
+@media(max-width:560px){
+  .header{ padding:32px 20px; }
+  .main{ padding:20px 16px 60px; }
+  .q-card,.start-box,.finish-box{ padding:24px 18px; }
+  .finish-grid{ grid-template-columns:repeat(3,1fr); }
+  .prog-wrap{ padding:14px 20px; }
+  .prog-stats{ gap:12px; }
+}
+</style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← Вернуться к рабочей тетради</a>
+
+<div class="header">
+  <div class="badge">ГЛОССАРИЙ · ТЕСТ</div>
+  <h1>Проверка терминов</h1>
+  <p>Читай определение — выбери правильный термин</p>
+</div>
+
+<div class="prog-wrap">
+  <div class="prog-top">
+    <span class="prog-label" id="progLabel">Готов к старту</span>
+    <div class="prog-stats">
+      <div class="prog-stat">✅ <span class="val g" id="sCorrect">0</span></div>
+      <div class="prog-stat">❌ <span class="val r" id="sWrong">0</span></div>
+      <div class="prog-stat">📋 <span class="val b" id="sCurrent">0</span> / <span class="val b" id="sTotal">0</span></div>
+    </div>
+  </div>
+  <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+</div>
+
+<div class="main">
+
+  <!-- START -->
+  <div class="screen active" id="screenStart">
+    <div class="start-box">
+      <div class="start-num">104</div>
+      <div class="start-sub">ТЕРМИНА В БАЗЕ</div>
+      <h2>Тест по глоссарию</h2>
+      <p>Тебе будет показано <b>определение</b>.<br>
+         Твоя задача — выбрать правильный <b>термин</b> из 4 вариантов.<br>
+         После каждого ответа видишь объяснение.</p>
+      <div class="start-settings">
+        <div class="setting-group">
+          <label>КОЛИЧЕСТВО ВОПРОСОВ</label>
+          <select id="selCount">
+            <option value="10">10 вопросов</option>
+            <option value="20" selected>20 вопросов</option>
+            <option value="30">30 вопросов</option>
+            <option value="50">50 вопросов</option>
+            <option value="104">Все 104</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label>ВАРИАНТОВ ОТВЕТА</label>
+          <select id="selOpts">
+            <option value="3">3 варианта</option>
+            <option value="4" selected>4 варианта</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startTest()">Начать тест →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESTION -->
+  <div class="screen" id="screenQ">
+    <div class="q-wrap">
+      <div class="q-card" id="qCard">
+        <div class="q-meta">
+          <span class="q-num" id="qNum">ВОПРОС 1 / 20</span>
+        </div>
+        <span class="def-label">📖 ОПРЕДЕЛЕНИЕ</span>
+        <div class="def-text" id="qDef">—</div>
+        <div class="opts-label">ВЫБЕРИ ПРАВИЛЬНЫЙ ТЕРМИН:</div>
+        <div class="opts" id="qOpts"></div>
+        <div class="feedback" id="qFb"></div>
+        <div class="next-row">
+          <button class="btn btn-primary" id="nextBtn" onclick="nextQ()" style="display:none">
+            Следующий →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINISH -->
+  <div class="screen" id="screenFinish">
+    <div class="finish-box">
+      <span class="finish-emoji" id="fEmoji">🎉</span>
+      <h2 id="fTitle">Тест завершён!</h2>
+      <div class="finish-pct" id="fPct">0%</div>
+      <div class="finish-msg" id="fMsg">—</div>
+      <div class="finish-grid">
+        <div class="f-stat"><b class="g" id="fCorrect">0</b><span>ВЕРНО</span></div>
+        <div class="f-stat"><b class="r" id="fWrong">0</b><span>НЕВЕРНО</span></div>
+        <div class="f-stat"><b class="b" id="fTotal">0</b><span>ВОПРОСОВ</span></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="restartSame()">Пройти ещё раз</button>
+        <button class="btn" onclick="goStart()">Изменить настройки</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ALL = [
+  {t:"API",                d:"Интерфейс взаимодействия программ между собой."},
+  {t:"SDK",                d:"Набор инструментов и библиотек для разработки под платформу (Software Development Kit)."},
+  {t:"Компиляция",         d:"Процесс преобразования исходного кода в машинный язык."},
+  {t:"Отладка",            d:"Процесс поиска, анализа и исправления ошибок в программном коде."},
+  {t:"Рефакторинг",        d:"Переработка структуры кода с целью улучшения качества без изменения его внешнего поведения."},
+  {t:"Интерфейс (UI)",     d:"Визуальная оболочка приложения — всё, что видит и с чем взаимодействует пользователь."},
+  {t:"UX",                 d:"Пользовательский опыт — ощущения и впечатления человека от использования продукта."},
+  {t:"Поток",              d:"Отдельная последовательность выполнения инструкций, позволяющая распараллелить задачи."},
+  {t:"Кэш",                d:"Временное хранилище данных, ускоряющее повторный доступ к информации."},
+  {t:"Крэш",               d:"Аварийное завершение работы программы вследствие критической ошибки."},
+  {t:"iOS",                d:"Операционная система от Apple, используемая на смартфонах iPhone и планшетах iPad."},
+  {t:"Android",            d:"Открытая мобильная операционная система от Google, применяемая на большинстве смартфонов."},
+  {t:"Нативная разработка",d:"Создание приложения под конкретную платформу с использованием её родного языка программирования."},
+  {t:"Кроссплатформенность",d:"Подход, при котором единый код запускается и работает на нескольких платформах (iOS, Android)."},
+  {t:"Hybrid App",         d:"Приложение, сочетающее элементы нативного кода и веб-технологий в одном продукте."},
+  {t:"PWA",                d:"Progressive Web App — технология, превращающая обычный веб-сайт в подобие мобильного приложения."},
+  {t:"Build (Сборка)",     d:"Процесс компиляции всего исходного кода проекта в готовый исполняемый программный продукт."},
+  {t:"APK",                d:"Формат архивного файла для распространения и установки приложений на устройства Android."},
+  {t:"IPA",                d:"Формат архивного файла для распространения и установки приложений на устройства iOS."},
+  {t:"AAB",                d:"Android App Bundle — формат публикации в Google Play, оптимизирующий размер пакета под конкретное устройство."},
+  {t:"Store (Стор)",       d:"Цифровая площадка для поиска, загрузки и распространения мобильных приложений (Google Play, App Store)."},
+  {t:"Swift",              d:"Современный компилируемый язык программирования от Apple, основной для разработки iOS и macOS приложений."},
+  {t:"Kotlin",             d:"Статически типизированный язык программирования, являющийся приоритетным для разработки Android-приложений."},
+  {t:"Objective-C",        d:"Компилируемый объектно-ориентированный язык программирования, ранее являвшийся основным для разработки под Apple."},
+  {t:"Java",               d:"Строго типизированный язык программирования, долгое время бывший стандартом для разработки Android-приложений."},
+  {t:"Flutter",            d:"Фреймворк от Google для создания кроссплатформенных мобильных приложений с единой кодовой базой."},
+  {t:"React Native",       d:"Фреймворк Facebook для разработки мобильных приложений с использованием JavaScript и библиотеки React."},
+  {t:"KMP",                d:"Kotlin Multiplatform — технология для совместного использования бизнес-логики между iOS и Android платформами."},
+  {t:"Dart",               d:"Язык программирования от Google, оптимизированный для клиентской разработки и используемый во Flutter."},
+  {t:"JavaScript",         d:"Динамический язык сценариев, широко применяемый в кроссплатформенных и гибридных мобильных решениях."},
+  {t:"SwiftUI",            d:"Декларативный фреймворк Apple для проектирования пользовательских интерфейсов с помощью кода."},
+  {t:"Jetpack Compose",    d:"Современный декларативный инструментарий Android для построения нативного пользовательского интерфейса."},
+  {t:"HIG",                d:"Human Interface Guidelines — официальный свод правил и рекомендаций по дизайну интерфейсов от Apple."},
+  {t:"Material Design",    d:"Дизайн-система от Google, определяющая визуальный стиль и поведение элементов в Android-приложениях."},
+  {t:"Widget",             d:"Информационный элемент на главном экране устройства или базовый строительный блок интерфейса во Flutter."},
+  {t:"Storyboard",         d:"Визуальный редактор в среде Xcode для создания экранов и настройки навигации между ними."},
+  {t:"Layout",             d:"Модель, описывающая расположение и размеры элементов управления на экране устройства."},
+  {t:"Dark Mode",          d:"Системная настройка операционной системы, переключающая интерфейс на тёмную цветовую схему."},
+  {t:"SafeArea",           d:"Зона экрана, гарантирующая, что контент не будет перекрыт системными элементами — вырезами или индикаторами."},
+  {t:"Splash Screen",      d:"Заставочный экран с логотипом приложения, отображаемый в момент его инициализации и загрузки."},
+  {t:"Tab Bar",            d:"Навигационный элемент в нижней части экрана, обеспечивающий быстрый доступ к основным разделам."},
+  {t:"Adaptive Design",    d:"Способность интерфейса корректно подстраиваться под разные диагонали экранов и их ориентации."},
+  {t:"WebView",            d:"Встроенный компонент, позволяющий отображать полноценный веб-контент непосредственно внутри приложения."},
+  {t:"Lifecycle",          d:"Жизненный цикл — строго определённая последовательность состояний приложения или экрана от запуска до завершения."},
+  {t:"MVVM",               d:"Архитектурный паттерн, разделяющий приложение на три слоя: данные (Model), интерфейс (View) и логику (ViewModel)."},
+  {t:"Clean Architecture", d:"Концепция разделения кода на независимые слои с чёткими границами для упрощения тестирования и поддержки."},
+  {t:"Dependency Injection",d:"Паттерн проектирования, при котором объект получает свои зависимости извне, а не создаёт их самостоятельно."},
+  {t:"Repository",         d:"Слой абстракции над источниками данных, определяющий, откуда брать информацию — из сети или локальной базы."},
+  {t:"State",              d:"Текущее состояние данных приложения в конкретный момент времени, напрямую влияющее на отображение UI."},
+  {t:"Deep Link",          d:"Специальная ссылка, позволяющая открыть приложение и перейти сразу в конкретный его раздел или экран."},
+  {t:"Push-уведомления",   d:"Краткие сообщения, отправляемые с сервера и всплывающие на экране устройства пользователя."},
+  {t:"Local Notifications",d:"Уведомления, которые само приложение планирует и отправляет локально, без участия сервера."},
+  {t:"Background Tasks",   d:"Задачи и процессы, которые приложение выполняет в фоновом режиме, не требуя активного взаимодействия."},
+  {t:"JSON",               d:"Лёгкий текстовый формат обмена данными, основанный на синтаксисе JavaScript-объектов."},
+  {t:"REST API",           d:"Архитектурный стиль взаимодействия клиента и сервера через стандартные HTTP-запросы."},
+  {t:"GraphQL",            d:"Язык запросов к API, позволяющий клиенту точно указать, какие именно данные ему нужны."},
+  {t:"WebSocket",          d:"Протокол, обеспечивающий постоянное двустороннее соединение между клиентом и сервером в реальном времени."},
+  {t:"Retrofit",           d:"Популярная библиотека-клиент для выполнения HTTP-запросов и работы с API в Android-приложениях."},
+  {t:"Alamofire",          d:"Высокоуровневая библиотека для удобного и безопасного сетевого взаимодействия в iOS-приложениях."},
+  {t:"Caching",            d:"Временное сохранение данных или результатов вычислений для ускорения последующего доступа к ним."},
+  {t:"Room",               d:"Официальная библиотека Android для удобной и типобезопасной работы с реляционной базой данных SQLite."},
+  {t:"Core Data",          d:"Объектно-ориентированный фреймворк Apple для управления моделью данных и их хранением в iOS-приложениях."},
+  {t:"Realm",              d:"Кроссплатформенная мобильная база данных с высокой производительностью, альтернативная стандартным решениям."},
+  {t:"Firebase",           d:"Облачная платформа Google, предоставляющая готовые бэкенд-сервисы для мобильных и веб-приложений."},
+  {t:"Unit Test",          d:"Автоматизированный тест, проверяющий корректность работы одной изолированной функции или метода."},
+  {t:"UI Test",            d:"Автоматизированный тест, имитирующий действия пользователя и проверяющий поведение элементов интерфейса."},
+  {t:"QA",                 d:"Quality Assurance — комплексный процесс обеспечения качества программного продукта на всех этапах разработки."},
+  {t:"Beta Testing",       d:"Этап тестирования приложения ограниченной аудиторией реальных пользователей перед официальным релизом."},
+  {t:"TestFlight",         d:"Официальный сервис Apple для распространения бета-версий приложений среди тестировщиков до публикации."},
+  {t:"Google Play Console",d:"Веб-панель управления для разработчиков, позволяющая публиковать приложения и анализировать их статистику."},
+  {t:"App Store Connect",  d:"Инструмент Apple для загрузки сборок, управления метаданными и отслеживания статуса приложений в App Store."},
+  {t:"Review",             d:"Проверка приложения модераторами магазина на соответствие правилам платформы перед публикацией."},
+  {t:"Crashlytics",        d:"Аналитический инструмент Firebase для автоматического сбора, группировки и анализа отчётов о сбоях."},
+  {t:"CI/CD",              d:"Автоматизация процессов непрерывной интеграции кода и его доставки пользователям через пайплайны."},
+  {t:"Xcode",              d:"Официальная интегрированная среда разработки Apple для создания приложений iOS, macOS, watchOS и tvOS."},
+  {t:"Android Studio",     d:"Официальная IDE на базе IntelliJ IDEA, являющаяся основным инструментом разработки Android-приложений."},
+  {t:"Simulator",          d:"Программа на компьютере Mac, имитирующая программную среду iPhone или iPad без аппаратной части."},
+  {t:"Emulator",           d:"Виртуальное устройство, полностью воссоздающее аппаратную и программную часть Android-смартфона на ПК."},
+  {t:"Git",                d:"Распределённая система контроля версий, позволяющая отслеживать изменения кода и работать в команде."},
+  {t:"CocoaPods",          d:"Менеджер зависимостей для Xcode-проектов, упрощающий подключение внешних библиотек в iOS-разработке."},
+  {t:"Gradle",             d:"Гибкая система автоматической сборки и управления зависимостями, стандартная для Android-проектов."},
+  {t:"Charles",            d:"Прокси-сервер для перехвата и анализа сетевого трафика между приложением и сервером (HTTP-сниффер)."},
+  {t:"Figma",              d:"Облачный онлайн-инструмент для совместного создания дизайна интерфейсов и интерактивных прототипов."},
+  {t:"Postman",            d:"Приложение для отправки HTTP-запросов, тестирования API и создания его документации."},
+  {t:"In-App Purchase",    d:"Встроенная технология магазина для продажи контента, функций или подписок непосредственно внутри приложения."},
+  {t:"Subscription",       d:"Бизнес-модель с периодической (ежемесячной или ежегодной) оплатой за доступ к функциям сервиса."},
+  {t:"Freemium",           d:"Бизнес-модель, при которой базовый функционал бесплатен, а расширенные возможности доступны за плату."},
+  {t:"IDFA",               d:"Identifier for Advertisers — уникальный рекламный идентификатор устройства Apple для таргетинга рекламы."},
+  {t:"Amplitude",          d:"Платформа продуктовой аналитики для глубокого анализа поведения и сегментации пользователей приложения."},
+  {t:"Retention",          d:"Метрика, показывающая, какой процент пользователей возвращается в приложение через заданный период времени."},
+  {t:"Churn Rate",         d:"Показатель оттока — процент пользователей, переставших использовать приложение за определённый период."},
+  {t:"ASO",                d:"App Store Optimization — комплекс мер по оптимизации страницы приложения для роста органических установок."},
+  {t:"ARCore / ARKit",     d:"Платформы для создания приложений с дополненной реальностью от Google (Android) и Apple (iOS)."},
+  {t:"NFC",                d:"Near Field Communication — технология беспроводной передачи данных на расстоянии до нескольких сантиметров."},
+  {t:"Biometrics",         d:"Технология аутентификации пользователя по биологическим параметрам: отпечатку пальца или геометрии лица."},
+  {t:"BLE",                d:"Bluetooth Low Energy — энергоэффективный протокол беспроводной связи с аксессуарами и носимыми устройствами."},
+  {t:"Geofencing",         d:"Технология создания виртуального географического периметра, при пересечении которого срабатывает событие."},
+  {t:"Accessibility",      d:"Адаптация приложения для людей с ограниченными возможностями: поддержка экранных читалок, крупного шрифта."},
+  {t:"Multi-threading",    d:"Параллельное выполнение нескольких задач в разных потоках для повышения производительности и отзывчивости."},
+  {t:"Main Thread",        d:"Главный поток приложения, единственный ответственный за отрисовку и обновление пользовательского интерфейса."},
+  {t:"Coroutines",         d:"Механизм в Kotlin для структурированного написания асинхронного кода без блокировок и колбэков."},
+  {t:"Combine / RxSwift",  d:"Реактивные фреймворки для декларативной обработки потоков событий и асинхронных данных в iOS."},
+  {t:"Obfuscation",        d:"Намеренное запутывание и усложнение программного кода для защиты интеллектуальной собственности от реверс-инжиниринга."},
+  {t:"Modularization",     d:"Архитектурный подход, при котором крупное приложение разбивается на небольшие независимые модули."},
+  {t:"Haptic Feedback",    d:"Тактильный отклик — использование вибрации для подтверждения действий пользователя и улучшения UX."},
+  {t:"Deep Learning",      d:"Применение нейронных сетей непосредственно на мобильном устройстве для задач распознавания и предсказания."},
+  {t:"Edge Computing",     d:"Парадигма вычислений, при которой данные обрабатываются на конечном устройстве, а не в удалённом облаке."},
+  {t:"App Extensions",     d:"Дополнительные модули приложения (виджеты, экшны), работающие за пределами основного интерфейса."},
+  {t:"Provisioning Profile",d:"Документ от Apple, связывающий приложение, разработчика и устройства и разрешающий установку на конкретные гаджеты."},
+];
+
+// ── STATE ───────────────────────────────────────────────────
+let queue=[], idx=0, correct=0, wrong=0;
+let locked=false, qCount=20, optCount=4;
+let lastQCount=20, lastOptCount=4;
+
+function shuffle(a){ return a.slice().sort(()=>Math.random()-0.5); }
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function updateProgress(){
+  const total=queue.length;
+  document.getElementById('sCorrect').textContent = correct;
+  document.getElementById('sWrong').textContent   = wrong;
+  document.getElementById('sCurrent').textContent = idx;
+  document.getElementById('sTotal').textContent   = total;
+  document.getElementById('progLabel').textContent= idx>0 ? `Вопрос ${idx} из ${total}` : 'Готов к старту';
+  document.getElementById('progFill').style.width = total ? (idx/total*100)+'%' : '0%';
+}
+
+function goStart(){
+  idx=0; correct=0; wrong=0; updateProgress();
+  show('screenStart');
+}
+
+function startTest(){
+  qCount   = parseInt(document.getElementById('selCount').value);
+  optCount = parseInt(document.getElementById('selOpts').value);
+  lastQCount=qCount; lastOptCount=optCount;
+  queue = shuffle(ALL).slice(0, Math.min(qCount, ALL.length));
+  idx=0; correct=0; wrong=0;
+  updateProgress();
+  show('screenQ');
+  loadQ();
+}
+
+function restartSame(){
+  qCount=lastQCount; optCount=lastOptCount;
+  queue = shuffle(ALL).slice(0, Math.min(qCount, ALL.length));
+  idx=0; correct=0; wrong=0;
+  updateProgress();
+  show('screenQ');
+  loadQ();
+}
+
+// ── LOAD QUESTION ───────────────────────────────────────────
+function loadQ(){
+  if(idx>=queue.length){ showFinish(); return; }
+  locked=false;
+  const item=queue[idx];
+  document.getElementById('qNum').textContent  = `ВОПРОС ${idx+1} / ${queue.length}`;
+  document.getElementById('qDef').innerHTML    = item.d;
+  document.getElementById('qFb').className     = 'feedback';
+  document.getElementById('nextBtn').style.display = 'none';
+
+  // Build options: 1 correct + (optCount-1) wrong
+  const pool = ALL.filter(x=>x.t!==item.t);
+  const wrongs = shuffle(pool).slice(0, optCount-1);
+  const opts   = shuffle([item, ...wrongs]);
+
+  const wrap = document.getElementById('qOpts');
+  wrap.innerHTML='';
+  opts.forEach((o,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opt';
+    btn.dataset.term=o.t;
+    btn.innerHTML=`<span class="opt-idx">${String.fromCharCode(65+i)}</span>${o.t}`;
+    btn.onclick=()=>pick(btn, o.t===item.t, item.t);
+    wrap.appendChild(btn);
+  });
+  updateProgress();
+}
+
+function pick(btn, isCorrect, correctTerm){
+  if(locked) return;
+  locked=true;
+
+  // Lock all buttons
+  document.querySelectorAll('.opt').forEach(b=>{
+    b.classList.add('locked');
+    if(b.dataset.term===correctTerm) b.classList.add(isCorrect && b===btn ? 'correct' : 'reveal');
+  });
+
+  const fb=document.getElementById('qFb');
+
+  if(isCorrect){
+    btn.classList.remove('reveal');
+    btn.classList.add('correct');
+    fb.className='feedback show ok';
+    fb.textContent='✅ Верно!';
+    correct++;
+  } else {
+    btn.classList.add('wrong');
+    // highlight correct
+    document.querySelectorAll('.opt').forEach(b=>{
+      if(b.dataset.term===correctTerm){ b.classList.remove('reveal'); b.classList.add('correct'); }
+    });
+    fb.className='feedback show err';
+    fb.textContent=`❌ Неверно. Правильный ответ: ${correctTerm}`;
+    wrong++;
+  }
+
+  idx++;
+  document.getElementById('nextBtn').style.display='inline-flex';
+  updateProgress();
+}
+
+function nextQ(){ loadQ(); }
+
+// ── FINISH ──────────────────────────────────────────────────
+function showFinish(){
+  const total=correct+wrong||queue.length;
+  const pct=Math.round(correct/total*100);
+  let emoji='🎉', title='Тест завершён!', msg='';
+  if(pct===100){ emoji='🏆'; title='Идеальный результат!'; msg='Ты знаешь все термины на отлично. Превосходно!'; }
+  else if(pct>=80){ emoji='🌟'; title='Отлично!'; msg='Большинство терминов усвоено очень хорошо. Повтори оставшиеся!'; }
+  else if(pct>=60){ emoji='👍'; title='Хороший результат!'; msg='Есть над чем поработать. Ещё один прогон — и будет отлично.'; }
+  else if(pct>=40){ emoji='📖'; title='Нужно повторить!'; msg='Рекомендуем вернуться к глоссарию и повторить определения.'; }
+  else            { emoji='💪'; title='Не сдавайся!'; msg='Изучи глоссарий ещё раз и попробуй снова — всё получится!'; }
+
+  document.getElementById('fEmoji').textContent   = emoji;
+  document.getElementById('fTitle').textContent   = title;
+  document.getElementById('fPct').textContent     = pct+'%';
+  document.getElementById('fMsg').textContent     = msg;
+  document.getElementById('fCorrect').textContent = correct;
+  document.getElementById('fWrong').textContent   = wrong;
+  document.getElementById('fTotal').textContent   = total;
+  document.getElementById('progFill').style.width = '100%';
+  document.getElementById('sCurrent').textContent = total;
+  show('screenFinish');
+}
+</script>
+</body>
+</html>
