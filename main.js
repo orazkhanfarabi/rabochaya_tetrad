@@ -6,6 +6,13 @@
 // ПЕРЕКЛЮЧЕНИЕ ТЕМЫ
 // ============================================================
 
+function showInstr(id, btn) {
+  document.querySelectorAll('.instr-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.instr-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('instr-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
 const THEME_KEY = 'workbook_theme';
 
 function initTheme() {

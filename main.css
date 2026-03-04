@@ -581,3 +581,37 @@
    
    .hidden  { display: none !important; }
    .visible { display: block; }
+
+   /* ===== ИНСТРУКЦИИ ===== */
+.instr-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.instr-tab {
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.instr-tab:hover { border-color: #4f6ef7; color: #4f6ef7; }
+.instr-tab.active { background: #4f6ef7; color: #fff; border-color: #4f6ef7; }
+
+.instr-panel { display: none; }
+.instr-panel.active { display: block; animation: fadeInUp 0.3s ease; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+#instructions h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 20px 0 8px;
+  color: #4f6ef7;
+}
