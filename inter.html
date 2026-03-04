@@ -321,6 +321,26 @@
   }
   .schema-placeholder .icon { font-size: 48px; display: block; margin-bottom: 16px; }
 
+  .back-link {
+    position: relative; z-index: 2;
+    display: inline-flex; align-items: center; gap: 8px;
+    margin: 16px 24px;
+    padding: 8px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .back-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--hover-bg);
+  }
+
   @media (max-width: 600px) {
     .main  { padding: 20px 16px; }
     .tabs  { padding: 16px 16px 0; }
