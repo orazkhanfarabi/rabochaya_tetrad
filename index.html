@@ -112,6 +112,13 @@
 <section id="instruction">
     <h2>Инструкции по работе с рабочей тетрадью</h2>
 
+    <!-- ВКЛАДКИ -->
+    <div class="instr-tabs">
+        <button class="instr-tab active" onclick="showInstr('user', this)">👤 Для пользователя</button>
+        <button class="instr-tab" onclick="showInstr('admin', this)">🛠️ Для системного администратора</button>
+        <button class="instr-tab" onclick="showInstr('dev', this)">💻 Для программиста</button>
+    </div>
+
     <!-- ПОЛЬЗОВАТЕЛЬ -->
     <div class="instr-panel active" id="instr-user">
         <h3>Инструкция для пользователя</h3>
